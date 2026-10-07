@@ -109,6 +109,7 @@ table.pdf-table td.name-cell{ text-align:right; }
 table.pdf-table td.name-cell b{ display:block; font-size:12.5px; }
 table.pdf-table td.name-cell span{ display:block; font-size:11px; color:#555; font-weight:400; }
 table.pdf-table td.phone-cell{ text-align:left; direction:ltr; }
+table.pdf-table td.phone-cell .phone-line{ display:block; line-height:1.7; }
 table.pdf-table tbody tr{ page-break-inside:avoid; break-inside:avoid; }
 </style>
 </head>
@@ -508,7 +509,8 @@ function buildDeptContentHtml(){
       html += '<td class="img-cell">'+(e.image?('<img src="'+e.image+'">'):'')+'</td>';
       html += '<td class="name-cell"><b>'+escapeHtml(e.name)+'</b>'+(e.specialty?'<span>'+escapeHtml(e.specialty)+'</span>':'')+'</td>';
       html += '<td>'+escapeHtml(addr)+'</td>';
-      html += '<td class="phone-cell">'+escapeHtml(e.phone||'')+'</td>';
+      const phoneParts = String(e.phone||'').split(/[\/\u060C,\n]+/).map(s=>s.trim()).filter(Boolean);
+      html += '<td class="phone-cell">'+phoneParts.map(p=>'<div class="phone-line">'+escapeHtml(p)+'</div>').join('')+'</td>';
       html += '</tr>';
     });
     html += '</tbody></table>';
