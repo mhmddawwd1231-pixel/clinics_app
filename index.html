@@ -510,7 +510,7 @@ function buildDeptContentHtml(){
       html += '<td class="name-cell"><b>'+escapeHtml(e.name)+'</b>'+(e.specialty?'<span>'+escapeHtml(e.specialty)+'</span>':'')+'</td>';
       html += '<td>'+escapeHtml(addr)+'</td>';
       const phoneParts = String(e.phone||'').split(/[\/\u060C,\n]+/).map(s=>s.trim()).filter(Boolean);
-      html += '<td class="phone-cell">'+phoneParts.map(p=>'<div class="phone-line">'+escapeHtml(p)+'</div>').join('')+'</td>';
+      html += '<td class="phone-cell" style="text-align:center;direction:ltr;">'+phoneParts.map(p=>'<div class="phone-line" style="display:block;width:100%;text-align:center;direction:ltr;">'+escapeHtml(p)+'</div>').join('')+'</td>';
       html += '</tr>';
     });
     html += '</tbody></table>';
