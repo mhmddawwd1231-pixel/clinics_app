@@ -1,0 +1,723 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>شبكة وقايتي - إدارة العيادات</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+:root{
+  --bg:#f4f6f8; --card:#ffffff; --text:#1c2430; --sub:#6b7280; --line:#e3e7eb;
+  --brand:#5b3fa0; --brand2:#7a5cc9; --accent:#2e7d6b; --danger:#c0392b;
+  box-sizing:border-box; padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){ --bg:#141821; --card:#1d2330; --text:#e8ebf0; --sub:#9aa4b2; --line:#2b3241; }
+}
+:root[data-theme="dark"]{ --bg:#141821; --card:#1d2330; --text:#e8ebf0; --sub:#9aa4b2; --line:#2b3241; }
+html{scroll-padding-top:env(safe-area-inset-top,0px); height:100%;}
+*{box-sizing:border-box;}
+body{margin:0;background:var(--bg);color:var(--text);font-family:"Segoe UI",Tahoma,Arial,sans-serif;height:100%;}
+.wrap{max-width:960px;margin:0 auto;padding:16px;}
+header{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px;flex-wrap:wrap;}
+h1{font-size:19px;margin:0;color:var(--brand);}
+.count{font-size:12px;color:var(--sub);margin-bottom:12px;}
+.search{width:100%;padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--text);font-size:14px;margin-bottom:12px;}
+.tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;max-height:130px;overflow-y:auto;padding:4px;border:1px solid var(--line);border-radius:12px;background:var(--card);}
+.tab{padding:7px 13px;border-radius:20px;border:1px solid var(--line);background:var(--bg);cursor:pointer;font-size:13px;color:var(--text);white-space:nowrap;}
+.tab.active{background:var(--brand);color:#fff;border-color:var(--brand);}
+.tab.add{background:transparent;border:1px dashed var(--brand2);color:var(--brand2);}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:14px;}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+@media(max-width:560px){.grid{grid-template-columns:1fr;}}
+label{font-size:12px;color:var(--sub);display:block;margin-bottom:4px;}
+input,select{width:100%;padding:9px 10px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--text);font-size:14px;}
+.actions{display:flex;gap:10px;margin-top:12px;flex-wrap:wrap;}
+button{cursor:pointer;border:none;border-radius:8px;padding:9px 16px;font-size:14px;}
+.btn-primary{background:var(--brand);color:#fff;}
+.btn-secondary{background:transparent;border:1px solid var(--line);color:var(--text);}
+.city-block{margin-bottom:18px;}
+.city-title{font-weight:700;color:var(--brand2);border-bottom:2px solid var(--line);padding-bottom:4px;margin-bottom:8px;font-size:15px;display:flex;justify-content:space-between;}
+.city-title .n{font-size:12px;color:var(--sub);font-weight:400;}
+.dept-block{margin-bottom:28px;}
+.dept-title{font-weight:800;color:#fff;background:linear-gradient(90deg,var(--brand),var(--brand2));padding:9px 14px;border-radius:10px;margin-bottom:12px;font-size:16px;display:flex;justify-content:space-between;}
+.dept-title .n{font-size:12px;color:#f0edf9;font-weight:400;}
+.img-grid{display:flex;flex-wrap:wrap;gap:10px;}
+.img-thumb{position:relative;width:92px;height:92px;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:var(--bg);}
+.img-thumb img{width:100%;height:100%;object-fit:cover;display:block;}
+.img-thumb .del-x{position:absolute;top:3px;left:3px;background:rgba(192,57,43,0.92);color:#fff;border:none;border-radius:50%;width:22px;height:22px;font-size:13px;line-height:1;cursor:pointer;padding:0;}
+.img-panel-hint{font-size:12px;color:var(--sub);margin-bottom:10px;}
+.entry{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-bottom:8px;display:flex;justify-content:space-between;gap:10px;align-items:flex-start;flex-wrap:wrap;}
+.entry .info b{font-size:15px;}
+.entry .info div{font-size:13px;color:var(--sub);margin-top:2px;}
+.entry .btns{display:flex;gap:6px;}
+.entry .btns button{padding:5px 10px;font-size:12px;}
+.edit-btn{background:#e8e0f7;color:var(--brand);}
+.del-btn{background:#fbe4e1;color:var(--danger);}
+.empty{color:var(--sub);text-align:center;padding:24px;font-size:14px;}
+.hint{font-size:12px;color:var(--sub);margin-top:6px;}
+.reset-link{font-size:12px;color:var(--sub);text-decoration:underline;cursor:pointer;background:none;border:none;padding:0;}
+.btn-outline{background:transparent;border:1px solid var(--brand);color:var(--brand);}
+#printArea{display:none;}
+@page{ size:auto; margin:0.9cm; }
+@media print{
+  body *{ visibility:hidden; }
+  #printArea, #printArea *{ visibility:visible; }
+  #printArea{ display:block; position:static; padding:0; margin:0; }
+  .pdf-cover-page{ display:flex !important; page-break-after:always; break-after:page; }
+}
+/* force the browser to actually print background colors (blue banners, etc.)
+   instead of silently stripping them */
+#printArea, #printArea *{ -webkit-print-color-adjust:exact; print-color-adjust:exact; color-adjust:exact; }
+.pdf-cover-page{width:100%;height:27cm;display:flex;align-items:center;justify-content:center;background:#fff;page-break-after:always;break-after:page;overflow:hidden;}
+.pdf-cover-page img{max-width:100%;max-height:100%;width:auto;height:auto;object-fit:contain;display:block;margin:auto;}
+
+/* The whole document is ONE <table>. Its <thead> holds ONLY the logo, so
+   the browser's native "repeat thead on every printed page" behaviour
+   fires exactly once per REAL physical page break - never mid-page, no
+   matter which department happens to be printing at that point. The
+   department banner and the column-header row are just normal rows inside
+   <tbody>, so each prints exactly once, right where it naturally falls,
+   and is never duplicated on a continuation page. Because there is no
+   forced page break between departments, a department simply continues
+   directly under whatever room is left, with nothing wasted. */
+.pdf-title-banner{
+  background:#1a56db; color:#ffffff; font-weight:800; font-size:16px; padding:10px 14px;
+  text-align:center; border:1px solid #1543a8; margin-bottom:10px;
+}
+table.pdf-table{ width:100%; border-collapse:collapse; margin-bottom:4px; font-size:12px; table-layout:fixed; }
+table.pdf-table col.c-name{ width:30%; } table.pdf-table col.c-addr{ width:48%; } table.pdf-table col.c-phone{ width:22%; }
+table.pdf-table thead{ display:table-header-group; }
+table.pdf-table thead tr{ page-break-inside:avoid; break-inside:avoid; }
+table.pdf-table .logo-row td{ border:none; padding:0; }
+.pdf-logo-header{ text-align:center; padding-bottom:8px; }
+.pdf-logo-header img{ width:100%; max-width:900px; max-height:4.6cm; object-fit:contain; display:block; margin:0 auto; }
+
+table.pdf-table tbody tr.dept-row td{ border:none; padding:0; }
+.pdf-dept-banner{
+  background:linear-gradient(90deg,#1543a8,#1a56db);
+  color:#fff; font-weight:800; font-size:15px; padding:9px 14px;
+  margin:16px 0 0 0; text-align:center;
+}
+table.pdf-table tbody tr:first-child .pdf-dept-banner{ margin-top:0; }
+table.pdf-table tbody tr.dept-row,
+table.pdf-table tbody tr.col-header-row{ page-break-after:avoid; break-after:avoid-page; page-break-inside:avoid; break-inside:avoid; }
+table.pdf-table th{ background:#eef2f7; color:#000; font-weight:800; padding:7px 8px; border:1px solid #9aa4ad; font-size:12.5px; text-align:center; }
+table.pdf-table td{ padding:6px 8px; border:1px solid #b9c2ca; vertical-align:top; word-wrap:break-word; text-align:center; color:#111; }
+table.pdf-table td.name-cell{ text-align:right; }
+table.pdf-table td.name-cell b{ display:block; font-size:12.5px; }
+table.pdf-table td.name-cell span{ display:block; font-size:11px; color:#555; font-weight:400; }
+table.pdf-table td.phone-cell{ text-align:center; vertical-align:middle; }
+table.pdf-table td.phone-cell .phone-line{ display:block; line-height:1.7; text-align:center; }
+table.pdf-table td.phone-cell .phone-num{ display:inline-block; direction:ltr; unicode-bidi:isolate; text-align:center; }
+table.pdf-table tbody tr{ page-break-inside:avoid; break-inside:avoid; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>شبكة وقايتي - إدارة العيادات</h1>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+      <button class="btn-outline" id="pdfBtn">⬇ تحميل PDF</button>
+      <button class="btn-outline" id="headerImgBtn">🖼 إضافة صور للـPDF</button>
+      <input type="file" accept="image/*" multiple id="headerImgInput" style="display:none;">
+      <button class="btn-secondary" id="headerImgClearBtn" style="display:none;">🗑 إدارة الصور</button>
+      <button class="btn-primary" id="openAddBtn">+ إضافة عيادة</button>
+    </div>
+  </header>
+  <div id="headerImgPanel" class="card" style="display:none;"></div>
+  <div class="count" id="countLine"></div>
+  <input class="search" id="searchBox" placeholder="بحث بالاسم أو الهاتف أو العنوان...">
+  <div class="tabs" id="tabs"></div>
+  <div id="formCard" class="card" style="display:none;"></div>
+  <div id="listArea"></div>
+  <div style="text-align:center;margin-top:20px;"><button class="reset-link" id="resetBtn">تصفير كل البيانات والبدء من جديد</button></div>
+</div>
+<div id="printArea"></div>
+
+<script>
+const SEED_ENTRIES = [{"dept": "المختبرات الطبية", "name": "مختبرات جوسانتي", "specialty": "", "phone": "06-5804444/0775804444", "city": "عمان", "subregion": "", "address": "الدوار السابع- مقابل المدارس الامريكية – خلف مسجد ابو عيشة", "id": 1, "ts": 0}, {"dept": "المختبرات الطبية", "name": "مختبرات اركان الطبية", "specialty": "", "phone": "0791170170", "city": "عمان", "subregion": "", "address": "الدوار السابع ابو رخية بلازا", "id": 2, "ts": 1}, {"dept": "المختبرات الطبية", "name": "مختبرات ايليت الطبية", "specialty": "", "phone": "0799901515/06-5501515", "city": "عمان", "subregion": "", "address": "شارع مكة – دوار الكيلو – مجمع كرمسون – الطابق الارضي", "id": 3, "ts": 2}, {"dept": "المختبرات الطبية", "name": "المختبرات الذكية (smart labs group)", "specialty": "", "phone": "0799159491/06-5936241", "city": "عمان", "subregion": "", "address": "عبدون – الدوار الخامس – مجمع جنى الطبي عماره 1", "id": 4, "ts": 3}, {"dept": "المختبرات الطبية", "name": "مختبرات الفا الطبية", "specialty": "", "phone": "0796510015", "city": "عمان", "subregion": "", "address": "شارع الخالدي – عمارة 51", "id": 5, "ts": 4}, {"dept": "المختبرات الطبية", "name": "مختبرات الفا الطبية", "specialty": "", "phone": "0795790953", "city": "عمان", "subregion": "", "address": "خلدا – بقرب من دوار خلدا – مجمع دابوق ديسترکت", "id": 6, "ts": 5}, {"dept": "المختبرات الطبية", "name": "مختبرات ام السماق الطبية", "specialty": "", "phone": "0777713342", "city": "عمان", "subregion": "", "address": "ام السماق – خلدا", "id": 7, "ts": 6}, {"dept": "المختبرات الطبية", "name": "مركز الحمر الطبي (30%)", "specialty": "", "phone": "06-4721982", "city": "عمان", "subregion": "", "address": "الفحيص – دوار شاكر", "id": 8, "ts": 7}, {"dept": "المختبرات الطبية", "name": "مختبرات الفا الطبية", "specialty": "", "phone": "0780822595", "city": "عمان", "subregion": "", "address": "الجاردنز – بجانب بنك الاسكان – عماره 27", "id": 9, "ts": 8}, {"dept": "المختبرات الطبية", "name": "مختبرات دايموند لاب", "specialty": "", "phone": "0793303301/0777077745", "city": "عمان", "subregion": "", "address": "بجانب مستشفى ابن الهيثم", "id": 10, "ts": 9}, {"dept": "المختبرات الطبية", "name": "مختبرات بيور هليث الطبية", "specialty": "", "phone": "0798021285", "city": "عمان", "subregion": "", "address": "الشميساني – شارع الشريف عبد الحميد شرف – عماره رقم 86", "id": 11, "ts": 10}, {"dept": "المختبرات الطبية", "name": "المختبرات الذكية (smart labs group)", "specialty": "", "phone": "0790454640/06-5603316", "city": "عمان", "subregion": "", "address": "الشميساني – مجمع د.سامي المومني - عمارة (56)", "id": 12, "ts": 11}, {"dept": "المختبرات الطبية", "name": "مختبرات زماريا الطبي", "specialty": "", "phone": "06-5929222", "city": "عمان", "subregion": "", "address": "ابو نصير - اشارة ابو نصير", "id": 13, "ts": 12}, {"dept": "المختبرات الطبية", "name": "مختبرات اركان الطبية", "specialty": "", "phone": "0777077790", "city": "عمان", "subregion": "", "address": "المقابلين - شارع القدس", "id": 14, "ts": 13}, {"dept": "المختبرات الطبية", "name": "المختبرات الذكية (smart labs group)", "specialty": "", "phone": "0798954765/06-5863245", "city": "عمان", "subregion": "", "address": "البيادر وادي السير - مجمع د.خميس البلبيسي عمارة (34)", "id": 15, "ts": 14}, {"dept": "المختبرات الطبية", "name": "مختبرات دايموند لاب", "specialty": "", "phone": "0793303301/0777077745", "city": "عمان", "subregion": "", "address": "جبل الحسين مقابل مستشفى الامل", "id": 16, "ts": 15}, {"dept": "المختبرات الطبية", "name": "مختبرات دي ان ايه DNA", "specialty": "", "phone": "0791510606/06-5699926", "city": "عمان", "subregion": "", "address": "جبل الحسين – شارع الرازي الطبي – عمارة 149 ط1", "id": 17, "ts": 16}, {"dept": "المختبرات الطبية", "name": "مختبرات اركان الطبية", "specialty": "", "phone": "0777077790", "city": "عمان", "subregion": "", "address": "المدينه الرياضية – مقابل المختار مول", "id": 18, "ts": 17}, {"dept": "المختبرات الطبية", "name": "مختبرات الخطيب الطبية", "specialty": "", "phone": "0799358280", "city": "عمان", "subregion": "", "address": "ضاحية الامير حسن – مجمع سمحه التجاري – بناية 17", "id": 19, "ts": 18}, {"dept": "المختبرات الطبية", "name": "مختبرات نبع الشفاء الطبي", "specialty": "", "phone": "0777150441", "city": "عمان", "subregion": "", "address": "الهاشمي الشمالي – حي الزعاتيت", "id": 20, "ts": 19}, {"dept": "المختبرات الطبية", "name": "مختبرات ملتي لاب الطبية", "specialty": "", "phone": "0790389592/06-5066225", "city": "عمان", "subregion": "", "address": "طبربور - منطقة طارق - مقابل الاهليه للمشاريع الصغيرة", "id": 21, "ts": 20}, {"dept": "المختبرات الطبية", "name": "مختبرات RAN MEDICAL LABS", "specialty": "", "phone": "0798122124", "city": "عمان", "subregion": "", "address": "القويسمة – شارع محمد منور الحديد – بجانب صيدلية العراقه – مجمع كنعان التجاري", "id": 22, "ts": 21}, {"dept": "المختبرات الطبية", "name": "مختبرات عالية الطبية", "specialty": "", "phone": "0776077779", "city": "عمان", "subregion": "", "address": "جبل النصر – حي عالية", "id": 23, "ts": 22}, {"dept": "المختبرات الطبية", "name": "مختبرات ماركا المركزيه", "specialty": "", "phone": "0775555178", "city": "عمان", "subregion": "", "address": "ماركا الجنوبية – مجمع ابو جاموس التجاري – بالقرب من دوار مركز الملكه رانيا", "id": 24, "ts": 23}, {"dept": "المختبرات الطبية", "name": "مختبرات ابو شمعه الطبية", "specialty": "", "phone": "0795704720", "city": "عمان", "subregion": "", "address": "ماركا الجنوبية – شارع الفداء", "id": 25, "ts": 24}, {"dept": "المختبرات الطبية", "name": "مختبرات دايموند لاب", "specialty": "", "phone": "0793303301/0777077745", "city": "عمان", "subregion": "", "address": "ياجوز – الجبل الشمالي – مقابل عربي افرنجي", "id": 26, "ts": 25}, {"dept": "المختبرات الطبية", "name": "مختبرات تكنو لاب", "specialty": "", "phone": "0786672088", "city": "عمان", "subregion": "", "address": "ياجوز – الجبل الشمالي – فوق كابولي", "id": 27, "ts": 26}, {"dept": "المختبرات الطبية", "name": "مختبرات دايموند لاب", "specialty": "", "phone": "0793303301/0777077745", "city": "عمان", "subregion": "", "address": "مخيم شنلر – مجمع الحريه – بجانب عربي افرنجي", "id": 28, "ts": 27}, {"dept": "المختبرات الطبية", "name": "مختبر النتائج الحيويه", "specialty": "", "phone": "0788643236", "city": "الزرقاء", "subregion": "", "address": "مركز جمزو الصحي", "id": 29, "ts": 28}, {"dept": "المختبرات الطبية", "name": "مختبرات دايموند لاب", "specialty": "", "phone": "0793303301/0777077745", "city": "الزرقاء", "subregion": "", "address": "الاتوستراد – بجانب مطاحن السلام", "id": 30, "ts": 29}, {"dept": "المختبرات الطبية", "name": "مختبرات دايموند لاب", "specialty": "", "phone": "0793303301/0777077745", "city": "الزرقاء", "subregion": "", "address": "شارع السعاده – عمارة طارق سنتر", "id": 31, "ts": 30}, {"dept": "المختبرات الطبية", "name": "مختبرات جوسانتي الطبية", "specialty": "", "phone": "0793334455", "city": "اربد", "subregion": "", "address": "شارع وصفي التل – مقابل صبحي ابو غلوس للسراميك", "id": 32, "ts": 31}, {"dept": "المختبرات الطبية", "name": "مختبرات دايموند لاب", "specialty": "", "phone": "0793303301/0777077745", "city": "اربد", "subregion": "", "address": "الرمثا – بجانب مخابز جوهرة حلب", "id": 33, "ts": 32}, {"dept": "المختبرات الطبية", "name": "مختبرات الفا الطبية", "specialty": "", "phone": "0792027749", "city": "العقبة", "subregion": "", "address": "المنطقة التجارية الرابعه", "id": 34, "ts": 33}, {"dept": "المختبرات الطبية", "name": "مختبرات تكنو لاب", "specialty": "", "phone": "0770706700", "city": "العقبة", "subregion": "", "address": "دوار الاميرة هيا – شارع الحمامات التونسية – مجمع الخير ط1", "id": 35, "ts": 34}, {"dept": "مراكز الطوارئ وطب عام", "name": "مركز جوسانتي", "specialty": "", "phone": "06-5804444/0775804444", "city": "عمان", "subregion": "", "address": "الدوار السابع – مقابل المدارس الامريكية", "id": 36, "ts": 35}, {"dept": "مراكز الطوارئ وطب عام", "name": "د. رعد عاكف العبادي", "specialty": "", "phone": "0770602925", "city": "عمان", "subregion": "", "address": "الدوار السابع – خلف فندق جنيفا", "id": 37, "ts": 36}, {"dept": "مراكز الطوارئ وطب عام", "name": "عيادات الامان الطبية", "specialty": "", "phone": "0797113535", "city": "عمان", "subregion": "", "address": "الدوار السابع – بالقرب من دوار الترخيص – شارع موسى الخطيب", "id": 38, "ts": 37}, {"dept": "مراكز الطوارئ وطب عام", "name": "مركز ايليت للرعاية الطبية", "specialty": "", "phone": "0799901515/06-5501515", "city": "عمان", "subregion": "", "address": "شارع مكة – دوار الكيلو – مجمع كرمسون – الطابق الارضي", "id": 39, "ts": 38}, {"dept": "مراكز الطوارئ وطب عام", "name": "د. محمد منصور السليحات", "specialty": "", "phone": "0790786166/0790708780", "city": "عمان", "subregion": "", "address": "خلف مجمع جبر – ش. ابراهيم قطان 95", "id": 40, "ts": 39}, {"dept": "مراكز الطوارئ وطب عام", "name": "مركز الحمر الطبي", "specialty": "", "phone": "06-4721382", "city": "عمان", "subregion": "", "address": "الفحيص – دوار شاكر", "id": 41, "ts": 40}, {"dept": "مراكز الطوارئ وطب عام", "name": "مركز سديل الطبي (كافة الاختصاصات)", "specialty": "", "phone": "0785905328/06-5868655", "city": "عمان", "subregion": "", "address": "خلدا – عند مدارس الدوار المنثور – شارع الاميره رحمه", "id": 42, "ts": 41}, {"dept": "مراكز الطوارئ وطب عام", "name": "عيادات نيو لايف الطبية", "specialty": "", "phone": "06-4002544/0790797500", "city": "عمان", "subregion": "", "address": "شارع الجاردنز – مجمع الاصدقاء 69 – فوق ابو شقره للعطور", "id": 43, "ts": 42}, {"dept": "مراكز الطوارئ وطب عام", "name": "عيادات كلينك كير", "specialty": "", "phone": "0796358558", "city": "عمان", "subregion": "", "address": "ضاحية الرشيد – شارع خليل الساكت عمارة 22", "id": 44, "ts": 43}, {"dept": "مراكز الطوارئ وطب عام", "name": "عيادات كير اند مور", "specialty": "", "phone": "0791114090", "city": "عمان", "subregion": "", "address": "ضاحية الرشيد", "id": 45, "ts": 44}, {"dept": "مراكز الطوارئ وطب عام", "name": "مركز زماريا الطبي (30%)", "specialty": "", "phone": "06-5929222", "city": "عمان", "subregion": "", "address": "ابو نصير – مجمع محي الدين التجاري", "id": 46, "ts": 45}, {"dept": "مراكز الطوارئ وطب عام", "name": "د. حسن السيوف", "specialty": "", "phone": "0797227298", "city": "عمان", "subregion": "", "address": "ابونصير – قرية ابو نصير", "id": 47, "ts": 46}, {"dept": "مراكز الطوارئ وطب عام", "name": "مركز نداء الخير الطبية", "specialty": "", "phone": "0795026562/06-4398883", "city": "عمان", "subregion": "", "address": "حي نزال – شارع الدستور – مقابل مستشفى الحياه – بعد مخبز غيث", "id": 48, "ts": 47}, {"dept": "مراكز الطوارئ وطب عام", "name": "عيادات هليث كير", "specialty": "", "phone": "06-5735103", "city": "عمان", "subregion": "", "address": "مرج الحمام – قرب دوار الدله", "id": 49, "ts": 48}, {"dept": "مراكز الطوارئ وطب عام", "name": "عيادات عصفور الطبية (30%)", "specialty": "", "phone": "0770041412", "city": "عمان", "subregion": "", "address": "مرج الحمام – دوار الدله – باتجاه ناعور – مجمع بنك اتحاد", "id": 50, "ts": 49}, {"dept": "مراكز الطوارئ وطب عام", "name": "د. تيسير عبد الكريم خضر", "specialty": "", "phone": "0796028587", "city": "عمان", "subregion": "", "address": "ضاحية الامير حسن – شارع محمد الحطاب 24", "id": 51, "ts": 50}, {"dept": "مراكز الطوارئ وطب عام", "name": "عيادات التوفيق الطبيه", "specialty": "", "phone": "0793010003", "city": "عمان", "subregion": "", "address": "طبربور – الشارع الرئيسي – مقابل مخابز الحوري", "id": 52, "ts": 51}, {"dept": "مراكز الطوارئ وطب عام", "name": "عيادات الخولي الطبية", "specialty": "", "phone": "06-5050158", "city": "عمان", "subregion": "", "address": "طبربور – الشارع الرئيسي", "id": 53, "ts": 52}, {"dept": "مراكز الطوارئ وطب عام", "name": "مركز نبع الشفاء الطبي", "specialty": "", "phone": "0777150441/0777150440", "city": "عمان", "subregion": "", "address": "الهاشمي الشمالي – شارع البطحاء – بالقرب من مسجد ابو العباس", "id": 54, "ts": 53}, {"dept": "مراكز الطوارئ وطب عام", "name": "د. محمود اسماعيل البو", "specialty": "", "phone": "0795176005", "city": "عمان", "subregion": "", "address": "ماركا الجنوبية – نادي السباق – بجانب صيدلية نزيه", "id": 55, "ts": 54}, {"dept": "مراكز الطوارئ وطب عام", "name": "عيادات وادي الشجره الطبي", "specialty": "", "phone": "0775599090", "city": "السلط", "subregion": "", "address": "وادي الشجره – بجانب غرفة تجارة السلط", "id": 56, "ts": 55}, {"dept": "مراكز الطوارئ وطب عام", "name": "د. نضال ابو شمعة", "specialty": "", "phone": "0795704720", "city": "عمان", "subregion": "", "address": "ماركا الجنوبية – شارع الفداء", "id": 57, "ts": 56}, {"dept": "مراكز الطوارئ وطب عام", "name": "د. ايمن المحتسب", "specialty": "", "phone": "0795713719", "city": "عمان", "subregion": "", "address": "ماركا الشمالية", "id": 58, "ts": 57}, {"dept": "مراكز الطوارئ وطب عام", "name": "د. عماد منصور", "specialty": "", "phone": "0785285732", "city": "الزرقاء", "subregion": "", "address": "الرصيفه – الجبل الشمالي", "id": 59, "ts": 58}, {"dept": "مراكز الطوارئ وطب عام", "name": "عيادة المنصور الطبية", "specialty": "", "phone": "0795649524", "city": "عمان", "subregion": "", "address": "ياجوز – فوق بنك صفوه", "id": 60, "ts": 59}, {"dept": "مراكز الطوارئ وطب عام", "name": "عيادات العون الطبية", "specialty": "", "phone": "0790446920", "city": "عمان", "subregion": "", "address": "ياجوز – حي الرشيد – عمارة المعطي", "id": 61, "ts": 60}, {"dept": "مراكز الطوارئ وطب عام", "name": "د. عبدالله محمود الطنطاوي", "specialty": "", "phone": "0779579306", "city": "الزرقاء", "subregion": "", "address": "الرصيفه – الرشيد – مقابل فنتوش مول", "id": 62, "ts": 61}, {"dept": "مراكز الطوارئ وطب عام", "name": "عيادات البارئ الطبي", "specialty": "", "phone": "0781911113", "city": "الزرقاء", "subregion": "", "address": "الزرقاء الجديده – شارع 36", "id": 63, "ts": 62}, {"dept": "مراكز الطوارئ وطب عام", "name": "د. عدي حسن نصرالله", "specialty": "", "phone": "0780051247", "city": "الزرقاء", "subregion": "", "address": "الزرقاء الجديده - شارع 36 مبنى جمعية عثمان بن عفان – مقابل حلويات السهل الاخضر", "id": 64, "ts": 63}, {"dept": "مراكز الطوارئ وطب عام", "name": "عيادات النور", "specialty": "", "phone": "0770145014", "city": "الزرقاء", "subregion": "", "address": "الزرقاء الجديده – خلف العميد – بجانب مسجد الريان", "id": 65, "ts": 64}, {"dept": "مراكز الطوارئ وطب عام", "name": "مركز تهامة الطبي (طوارئ 24 ساعة)", "specialty": "", "phone": "0780822165", "city": "الزرقاء", "subregion": "", "address": "حي الرشيد – بجانب كازية توتال", "id": 66, "ts": 65}, {"dept": "مراكز الطوارئ وطب عام", "name": "عيادات السلطان الطبية", "specialty": "", "phone": "0799061449", "city": "الزرقاء", "subregion": "", "address": "شارع الكرامه – مقابل قلعة ابراج للاحتفالات", "id": 67, "ts": 66}, {"dept": "مراكز الطوارئ وطب عام", "name": "عيادات طوارئ مجمع الباري الطبية", "specialty": "", "phone": "0781911113", "city": "الزرقاء", "subregion": "", "address": "شارع 36 – بجانب سامح مول - مجمع الباري الطبي", "id": 68, "ts": 67}, {"dept": "مراكز الطوارئ وطب عام", "name": "عيادات جوسانتي الطبية", "specialty": "", "phone": "0793334455", "city": "اربد", "subregion": "", "address": "شارع وصفي التل – مقابل صبحي ابو غلوس للسراميك", "id": 69, "ts": 68}, {"dept": "مراكز الطوارئ وطب عام", "name": "مركز الضحى الطبي", "specialty": "", "phone": "0792223939", "city": "الغور", "subregion": "", "address": "الكرامه – مقابل باصات الكرامه", "id": 70, "ts": 69}, {"dept": "اخصائي طب الاطفال والخداج", "name": "د. فتحي العزوني", "specialty": "", "phone": "0795113033", "city": "عمان", "subregion": "", "address": "عيادات مستشفى الاستقلال", "id": 71, "ts": 70}, {"dept": "اخصائي طب الاطفال والخداج", "name": "د. علياء وليد عطية", "specialty": "", "phone": "0779652738", "city": "عمان", "subregion": "", "address": "الشميساني – مقابل مستشفى التخصصي – شارع جابر ابن حيان – مجمع النور – الطابق ارضي", "id": 72, "ts": 71}, {"dept": "اخصائي طب الاطفال والخداج", "name": "د. يزن مقدادي (استشاري الاطفال وغدد الاطفال وسكري)", "specialty": "", "phone": "0799901515/06-5501515", "city": "عمان", "subregion": "", "address": "شارع مكة – دوار الكيلو – مجمع كرمسون – الطابق الارضي (مركز ايليت للرعاية الصحية)", "id": 73, "ts": 72}, {"dept": "اخصائي طب الاطفال والخداج", "name": "د. خالد محمود الغرايبة", "specialty": "", "phone": "0772268377/0790144590", "city": "عمان", "subregion": "", "address": "شارع المدينه المنوره – خلف مستشفى ابن الهيثم – عماره 14 – مجمع القصر الطبي", "id": 74, "ts": 73}, {"dept": "اخصائي طب الاطفال والخداج", "name": "د. كمال النصر", "specialty": "", "phone": "0792737610", "city": "عمان", "subregion": "", "address": "عيادات مستشفى ابن الهيثم", "id": 75, "ts": 74}, {"dept": "اخصائي طب الاطفال والخداج", "name": "د. اميمه الجراح", "specialty": "", "phone": "0782804349", "city": "عمان", "subregion": "", "address": "عيادات مستشفى الرشيد", "id": 76, "ts": 75}, {"dept": "اخصائي طب الاطفال والخداج", "name": "مركز زماريا الطبي", "specialty": "", "phone": "06-5929222", "city": "عمان", "subregion": "", "address": "ابو نصير – اشارة سوق التجاري – مجمع محي الدين (188) – الطابق B1", "id": 77, "ts": 76}, {"dept": "اخصائي طب الاطفال والخداج", "name": "د. قيس عازر", "specialty": "", "phone": "0776605599", "city": "عمان", "subregion": "", "address": "البيادر - شارع حسين خواجا مجمع جوهره البيادر الطابق الاول", "id": 78, "ts": 77}, {"dept": "اخصائي طب الاطفال والخداج", "name": "عيادات العصفور الطبية (30%)", "specialty": "", "phone": "06-5712062/0770041412", "city": "عمان", "subregion": "", "address": "مرج الحمام – شارع المنتخب الوطني – مجمع بنك الاتحاد", "id": 79, "ts": 78}, {"dept": "اخصائي طب الاطفال والخداج", "name": "د. غسان عيد قاقيش", "specialty": "", "phone": "4894455/0777496909", "city": "عمان", "subregion": "", "address": "ماركا الشمالية – الشارع الرئيسي – مجمع ماركا الطبي", "id": 80, "ts": 79}, {"dept": "اخصائي طب الاطفال والخداج", "name": "د. توفيق محمد البنا", "specialty": "", "phone": "0795484333", "city": "عمان", "subregion": "", "address": "الوحدات – مجمع ياسر النجار – بجانب شركة زين", "id": 81, "ts": 80}, {"dept": "اخصائي طب الاطفال والخداج", "name": "د. نبيل احمد الفارجه", "specialty": "", "phone": "0798151090", "city": "الزرقاء", "subregion": "", "address": "مستشفى جبل الزيتون", "id": 82, "ts": 81}, {"dept": "اخصائي طب الاطفال والخداج", "name": "د. سلوان احمد ابراهيم", "specialty": "", "phone": "0777981544/0779679923", "city": "الزرقاء", "subregion": "", "address": "شارع السعاده – مجمع صالح الكسواني", "id": 83, "ts": 82}, {"dept": "اخصائي طب الاطفال والخداج", "name": "د. فواز حامد ناصر", "specialty": "", "phone": "0796009565", "city": "الزرقاء", "subregion": "", "address": "مجمع الحكمه للاطباء الاستشاريين الطابق الاول - مستشفى الحكمه الحديث", "id": 84, "ts": 83}, {"dept": "اخصائي طب الاطفال والخداج", "name": "د. ماهر وحيد عبد الهادي", "specialty": "", "phone": "0790295102/0788118473", "city": "الزرقاء", "subregion": "", "address": "الزرقاء الجديده - شارع 36 مجمع البارئ الطبي – مقابل صيدلية بالي", "id": 85, "ts": 84}, {"dept": "اخصائي طب الاطفال والخداج", "name": "د. رياض رشيد البوريني", "specialty": "", "phone": "0785470808/0795010055", "city": "الزرقاء", "subregion": "", "address": "شارع السعاده - سوق جلاد", "id": 86, "ts": 85}, {"dept": "اخصائي طب الاطفال والخداج", "name": "د. محمد حميدي", "specialty": "", "phone": "0785479515", "city": "الزرقاء", "subregion": "", "address": "شارع الملك عبدالله فوق صيدليه الحكمه الطابق الاول", "id": 87, "ts": 86}, {"dept": "اخصائي طب الاطفال والخداج", "name": "د. يارا معايعه", "specialty": "", "phone": "06-5330303/0790791883", "city": "عمان", "subregion": "", "address": "الفحيص - شارع الامير علي مجمع القيصر ط1", "id": 88, "ts": 87}, {"dept": "اخصائي طب الاطفال والخداج", "name": "د. مراد المساعده", "specialty": "", "phone": "0772278806", "city": "عمان", "subregion": "", "address": "الفحيص - دوار شاكر مجمع عكروش ط الارضي", "id": 89, "ts": 88}, {"dept": "اخصائي طب الاطفال والخداج", "name": "مركز بلسم الطبي", "specialty": "", "phone": "0770101222", "city": "اربد", "subregion": "", "address": "جنوب مستشفى الرهبات", "id": 90, "ts": 89}, {"dept": "اخصائي قلب اطفال", "name": "د. عوني المدني (مستشار اول قلب الاطفال)", "specialty": "", "phone": "0797414171", "city": "عمان", "subregion": "", "address": "جبل عمان – شارع مستشفى الخالدي- مجمع الرجاء الطبي – عمارة 54 الطابق الثاني", "id": 91, "ts": 90}, {"dept": "اخصائي قلب اطفال", "name": "د. فخري الحكيم", "specialty": "", "phone": "0795553605", "city": "عمان", "subregion": "", "address": "شارع الخالدي – مجمع الرجاء 2 عماره 56 الطابق الاول", "id": 92, "ts": 91}, {"dept": "اخصائي جراحة كلى ومسالك بولية (اطفال)", "name": "د. اسامة بني هاني (استشاري جراحة الكلى والمسالك البولية)", "specialty": "", "phone": "0798177430", "city": "عمان", "subregion": "", "address": "خلدا – امتداد شارع وصفي التل – بجانب مستشفى السعودي مجمع الشرمان 4 – الطابق", "id": 93, "ts": 92}, {"dept": "عيادات النسائية والتوليد", "name": "د. ماهر المعايطه", "specialty": "", "phone": "0772572311", "city": "عمان", "subregion": "", "address": "مستشفى العبدلي", "id": 94, "ts": 93}, {"dept": "عيادات النسائية والتوليد", "name": "د. رامي الكيلاني", "specialty": "", "phone": "0797383111", "city": "عمان", "subregion": "", "address": "جبل عمان – خلف مستشفى فرح – شارع ابو فراس الحمداني – مجمع الحكمة الطبي – ط1", "id": 95, "ts": 94}, {"dept": "عيادات النسائية والتوليد", "name": "د. هاله الغصين (استشارية نسائية وتوليد وعقم)", "specialty": "", "phone": "0795735172", "city": "عمان", "subregion": "", "address": "جبل عمان – مستشفى فرح", "id": 96, "ts": 95}, {"dept": "عيادات النسائية والتوليد", "name": "د. ريم فواز الخالدي", "specialty": "", "phone": "0796324295", "city": "عمان", "subregion": "", "address": "جبل عمان – مجمع السخاء الطبي", "id": 97, "ts": 96}, {"dept": "عيادات النسائية والتوليد", "name": "د. عماد عمرو (استشاري جراحة نسائية والتوليد)", "specialty": "", "phone": "0795087341", "city": "عمان", "subregion": "", "address": "شارع الخالدي – فوق صيدلية روحي", "id": 98, "ts": 97}, {"dept": "عيادات النسائية والتوليد", "name": "د. انديرا ابو عناب (استشارية الجراحة النسائية بالمنظار)", "specialty": "", "phone": "06-5923735", "city": "عمان", "subregion": "", "address": "جبل عمان – الدوار الخامس مقابل المركز العربي بناية 14 – عيادة الشافي", "id": 99, "ts": 98}, {"dept": "عيادات النسائية والتوليد", "name": "مركز ايليت للرعاية الطبية / د. دانا سليمان", "specialty": "", "phone": "0799901515", "city": "عمان", "subregion": "", "address": "شارع مكة – دوار الكيلو – مجمع كرمسون – الطابق الارضي", "id": 100, "ts": 99}, {"dept": "عيادات النسائية والتوليد", "name": "د. زينب الموسوي", "specialty": "", "phone": "06-5609060", "city": "عمان", "subregion": "", "address": "م. الاردن – عيادات مستشفى الاردن", "id": 101, "ts": 100}, {"dept": "عيادات النسائية والتوليد", "name": "د. جميل محمد شعبان", "specialty": "", "phone": "06-5609060", "city": "عمان", "subregion": "", "address": "م. الاردن – عيادات مستشفى الاردن", "id": 102, "ts": 101}, {"dept": "عيادات النسائية والتوليد", "name": "د. رانيا عبده", "specialty": "", "phone": "0795063332", "city": "عمان", "subregion": "", "address": "الشميساني – مقابل مستشفى الاردن – مجمع الصفا 1", "id": 103, "ts": 102}, {"dept": "عيادات النسائية والتوليد", "name": "د. زينب الفلاية", "specialty": "", "phone": "0799748313", "city": "عمان", "subregion": "", "address": "عيادات مستشفى الرويال – المبنى الغربي – ط2", "id": 104, "ts": 103}, {"dept": "عيادات النسائية والتوليد", "name": "د. زينب الهلالي", "specialty": "", "phone": "06-5655950", "city": "عمان", "subregion": "", "address": "عيادات مستشفى الفلندي", "id": 105, "ts": 104}, {"dept": "عيادات النسائية والتوليد", "name": "د. وائل ابونواس", "specialty": "", "phone": "06-5655950", "city": "عمان", "subregion": "", "address": "عيادات مستشفى الفلندي", "id": 106, "ts": 105}, {"dept": "عيادات النسائية والتوليد", "name": "د. فوزية المصري سعادة", "specialty": "", "phone": "0797676033", "city": "عمان", "subregion": "", "address": "عيادات مستشفى الاستقلال – ط3", "id": 107, "ts": 106}, {"dept": "عيادات النسائية والتوليد", "name": "د. ماهر الصراف (استشاري جراحة نسائية والتوليد)", "specialty": "", "phone": "06-5005060 فرعي 513/0795773153", "city": "عمان", "subregion": "", "address": "جبل الحسين - مستشفى الامل العيادات الخارجية", "id": 108, "ts": 107}, {"dept": "عيادات النسائية والتوليد", "name": "د. رائد خليفة", "specialty": "", "phone": "06-5005060 فرعي 503/0795151321", "city": "عمان", "subregion": "", "address": "جبل الحسين - مستشفى الامل العيادات الخارجية", "id": 109, "ts": 108}, {"dept": "عيادات النسائية والتوليد", "name": "د. انور الجدع", "specialty": "", "phone": "06-4777444", "city": "عمان", "subregion": "", "address": "مستشفى الرشيد", "id": 110, "ts": 109}, {"dept": "عيادات النسائية والتوليد", "name": "د. هيثم جودت المصري", "specialty": "", "phone": "0771916320", "city": "عمان", "subregion": "", "address": "دوار الداخليه – بجانب مستشفى الامل", "id": 111, "ts": 110}, {"dept": "عيادات النسائية والتوليد", "name": "د. منى الحاج داود الشعراوي", "specialty": "", "phone": "06-5625615/0799219486", "city": "عمان", "subregion": "", "address": "شارع المدينه المنوره – بجانب العيادات الخارجيه لمستشفى ابن الهيثم – مقابل البنك العربي – مجمع هشام سلامة 2", "id": 112, "ts": 111}, {"dept": "عيادات النسائية والتوليد", "name": "د. هداية الحسبان", "specialty": "", "phone": "0777413902", "city": "عمان", "subregion": "", "address": "عيادات مستشفى ابن الهيثم", "id": 113, "ts": 112}, {"dept": "عيادات النسائية والتوليد", "name": "د. اولينا السراحنه", "specialty": "", "phone": "0791547316", "city": "عمان", "subregion": "", "address": "خلدا + عين الباشا", "id": 114, "ts": 113}, {"dept": "عيادات النسائية والتوليد", "name": "د. مراد المومني", "specialty": "", "phone": "0772222017", "city": "عمان", "subregion": "", "address": "مستشفى الحرمين شارع مكه مقابل مجمع جبر", "id": 115, "ts": 114}, {"dept": "عيادات النسائية والتوليد", "name": "د. رفيق عدنان برقاوي", "specialty": "", "phone": "0776045239", "city": "عمان", "subregion": "", "address": "مرج الحمام – دوار الدله – مجمع حسن البرديني – الدور الثاني", "id": 116, "ts": 115}, {"dept": "عيادات النسائية والتوليد", "name": "د. جمانه احمد الطبنجي", "specialty": "", "phone": "0777423254", "city": "عمان", "subregion": "", "address": "طبربور", "id": 117, "ts": 116}, {"dept": "عيادات النسائية والتوليد", "name": "د. مها ابراهيم", "specialty": "", "phone": "0776032323", "city": "عمان", "subregion": "", "address": "ماركا الشماليه", "id": 118, "ts": 117}, {"dept": "عيادات النسائية والتوليد", "name": "د. وليد الناجي", "specialty": "", "phone": "0797784217", "city": "الزرقاء", "subregion": "", "address": "عيادات مستشفى الحكمه", "id": 119, "ts": 118}, {"dept": "عيادات النسائية والتوليد", "name": "د. انتصار خندقجي", "specialty": "", "phone": "0777781403", "city": "الزرقاء", "subregion": "", "address": "مجمع الحكمة للاستشاريين ط1", "id": 120, "ts": 119}, {"dept": "عيادات النسائية والتوليد", "name": "د. حسام الخالدي", "specialty": "", "phone": "0795245566", "city": "الزرقاء", "subregion": "", "address": "مستشفى الحكمة الحديث – مجمع الاطباء", "id": 121, "ts": 120}, {"dept": "عيادات النسائية والتوليد", "name": "د. سلطان القضاه", "specialty": "", "phone": "0772260751", "city": "الزرقاء", "subregion": "", "address": "شارع السعادة – مقابل صيدلية فلسطين ط3", "id": 122, "ts": 121}, {"dept": "عيادات النسائية والتوليد", "name": "د. كمال محمد الناجي", "specialty": "", "phone": "0797333403", "city": "الزرقاء", "subregion": "", "address": "مستشفى جبل الزيتون", "id": 123, "ts": 122}, {"dept": "اطباء جلدية وتناسليه", "name": "د. عبد غيث (استشاري جلدية)", "specialty": "", "phone": "0797558870", "city": "عمان", "subregion": "", "address": "ضاحية الياسمين – مركز ادمه", "id": 124, "ts": 123}, {"dept": "اطباء جلدية وتناسليه", "name": "د. طلعت موسى العبد (استشاري الامراض الجلدية والليزر)", "specialty": "", "phone": "0776440764/0797719785", "city": "عمان", "subregion": "", "address": "شارع الخالدي – بناية 51 – مجمع الفا الطبي ط2", "id": 125, "ts": 124}, {"dept": "اطباء جلدية وتناسليه", "name": "د. عدي يوسف الختاتنه", "specialty": "", "phone": "06-5525576/0790993099", "city": "عمان", "subregion": "", "address": "مجمع خلف الطبي – الطابق الثالث", "id": 126, "ts": 125}, {"dept": "اطباء جلدية وتناسليه", "name": "د. وضاح البرغوثي", "specialty": "", "phone": "0777385990", "city": "عمان", "subregion": "", "address": "جبل عمان", "id": 127, "ts": 126}, {"dept": "اطباء جلدية وتناسليه", "name": "د. عبدالله الداود", "specialty": "", "phone": "0795719227", "city": "عمان", "subregion": "", "address": "شارع الخالدي مجمع روحي", "id": 128, "ts": 127}, {"dept": "اطباء جلدية وتناسليه", "name": "د. وسام الرواشدة", "specialty": "", "phone": "0795071813", "city": "عمان", "subregion": "", "address": "الدوار السابع – بجانب السيفوي", "id": 129, "ts": 128}, {"dept": "اطباء جلدية وتناسليه", "name": "د. رافت العكر", "specialty": "", "phone": "0795407402", "city": "عمان", "subregion": "", "address": "خلدا – شارع مكة مجمع الخواجا 44", "id": 130, "ts": 129}, {"dept": "اطباء جلدية وتناسليه", "name": "د. حسين عضيبات (الامراض الجلدية والتجميل الجلد)", "specialty": "", "phone": "0777236136", "city": "عمان", "subregion": "", "address": "عيادات مستشفى الاسراء الطبي – ط3", "id": 131, "ts": 130}, {"dept": "اطباء جلدية وتناسليه", "name": "د. محمد يوسف القيام", "specialty": "", "phone": "06-5634345/0790567421", "city": "عمان", "subregion": "", "address": "مستشفى الاستقلال – العيادات الخارجية – ط3 عياده 307", "id": 132, "ts": 131}, {"dept": "اطباء جلدية وتناسليه", "name": "د. محمد كايد", "specialty": "", "phone": "0780576122", "city": "عمان", "subregion": "", "address": "عيادات مستشفى الرويال", "id": 133, "ts": 132}, {"dept": "اطباء جلدية وتناسليه", "name": "د. بشار عباسي (استشاري الامراض الجلدية وتناسلية)", "specialty": "", "phone": "0795056962", "city": "عمان", "subregion": "", "address": "الشميساني – شارع جابر بن حيان – عرق السوس 48", "id": 134, "ts": 133}, {"dept": "اطباء جلدية وتناسليه", "name": "د. حامد عمرو (استشاري جلدية وتناسلية)", "specialty": "", "phone": "06-5699944/0795278060", "city": "عمان", "subregion": "", "address": "الشميساني – بجانب التخصصي مجمع عمران الطبي بناية 60", "id": 135, "ts": 134}, {"dept": "اطباء جلدية وتناسليه", "name": "د. خليل محمد حمزه (استشاري الامراض الجلدية)", "specialty": "", "phone": "0795858856", "city": "عمان", "subregion": "", "address": "الوحدات – شارع مادبا – فوق حلويات حبيبه", "id": 136, "ts": 135}, {"dept": "اطباء جلدية وتناسليه", "name": "د. اياد ابو ربيع", "specialty": "", "phone": "0793102108", "city": "الزرقاء", "subregion": "", "address": "الاتوستراد – بجانب مستشفى الزيتون", "id": 137, "ts": 136}, {"dept": "اطباء جلدية وتناسليه", "name": "د. حسين عضيبات (الامراض الجلدية والتجميل الجلد)", "specialty": "", "phone": "0772020070", "city": "جرش", "subregion": "", "address": "جرش", "id": 138, "ts": 137}, {"dept": "اطباء جراحة كلى ومسالك بولية", "name": "د. طارق يوسف (استشاري جراحة الكلى والمسالك البوليه)", "specialty": "", "phone": "0791457776", "city": "عمان", "subregion": "", "address": "الدوار الخامس – مجمع خلف الطبي – مقابل المدخل الرئيسي للمركز العربي", "id": 139, "ts": 138}, {"dept": "اطباء جراحة كلى ومسالك بولية", "name": "د. عمر يوسف الامير (استشاري جراحة الكلى والمسالك البوليه)", "specialty": "", "phone": "06-5929485", "city": "عمان", "subregion": "", "address": "الدوار الخامس – مجمع يافا الطبي – مقابل المركز العربي", "id": 140, "ts": 139}, {"dept": "اطباء جراحة كلى ومسالك بولية", "name": "د. شرف مروان ربيع", "specialty": "", "phone": "0795831263", "city": "عمان", "subregion": "", "address": "شارع الخالدي – مجمع الحياه", "id": 141, "ts": 140}, {"dept": "اطباء جراحة كلى ومسالك بولية", "name": "مركز الغيث الطبي", "specialty": "", "phone": "0793538886", "city": "عمان", "subregion": "", "address": "الدوار الخامس – مجمع جنى الطبي", "id": 142, "ts": 141}, {"dept": "اطباء جراحة كلى ومسالك بولية", "name": "مركز ايليت للرعاية الطبية", "specialty": "", "phone": "0799901515/06-5501515", "city": "عمان", "subregion": "", "address": "شارع مكة – دوار الكيلو – مجمع كرمسون – الطابق الارضي", "id": 143, "ts": 142}, {"dept": "اطباء جراحة كلى ومسالك بولية", "name": "د. توفيق محمود البوسطه", "specialty": "", "phone": "0796210661", "city": "عمان", "subregion": "", "address": "شارع وادي صقره – العيادات الخارجية للمستشفى الاستشاري – ط الارضي", "id": 144, "ts": 143}, {"dept": "اطباء جراحة كلى ومسالك بولية", "name": "د. حسام سعدي الخياط", "specialty": "", "phone": "0790823270", "city": "عمان", "subregion": "", "address": "مقابل مستشفى التخصصي – مجمع الحسيني – الطابق الثاني 1", "id": 145, "ts": 144}, {"dept": "اطباء جراحة كلى ومسالك بولية", "name": "د. غسان علي التلاحمه", "specialty": "", "phone": "0785970400", "city": "عمان", "subregion": "", "address": "مستشفى الاردن – الطابق الثالث", "id": 146, "ts": 145}, {"dept": "اطباء جراحة كلى ومسالك بولية", "name": "د. ابراهيم فتحي الغلاييني", "specialty": "", "phone": "0795613399/06-5609057", "city": "عمان", "subregion": "", "address": "مستشفى الاردن – المركز الطبي", "id": 147, "ts": 146}, {"dept": "اطباء جراحة كلى ومسالك بولية", "name": "د. محمد القزعه", "specialty": "", "phone": "0777415761/0795591531", "city": "عمان", "subregion": "", "address": "عيادات مستشفى الرويال المدخل الشمالي", "id": 148, "ts": 147}, {"dept": "اطباء جراحة كلى ومسالك بولية", "name": "د. عامر ذياب البديرات", "specialty": "", "phone": "0799509173", "city": "عمان", "subregion": "", "address": "عيادات مستشفى الرويال المدخل الشمالي", "id": 149, "ts": 148}, {"dept": "اطباء جراحة كلى ومسالك بولية", "name": "د. محمد عبد اللطيف كريشان", "specialty": "", "phone": "06-5634349/0776909617", "city": "عمان", "subregion": "", "address": "جبل الحسين – عيادات مستشفى الكندي – الطابق الثاني", "id": 150, "ts": 149}, {"dept": "اطباء جراحة كلى ومسالك بولية", "name": "د. احمد الجعبري", "specialty": "", "phone": "0791368302", "city": "عمان", "subregion": "", "address": "مستشفى الرشيد", "id": 151, "ts": 150}, {"dept": "اطباء جراحة كلى ومسالك بولية", "name": "د. سعدي الخياط (استشاري جراحة الكلى والمسالك البوليه)", "specialty": "", "phone": "0795559798", "city": "عمان", "subregion": "", "address": "شارع الجامعة – العيادات الخارجية لمستشفى الاسراء – ط4 – عياده رقم 47", "id": 152, "ts": 151}, {"dept": "اطباء جراحة كلى ومسالك بولية", "name": "عيادات العصفور الطبية (30%)", "specialty": "", "phone": "06-5712062/0770041412", "city": "عمان", "subregion": "", "address": "مرج الحمام – شارع المنتخب الوطني – مجمع بنك الاتحاد", "id": 153, "ts": 152}, {"dept": "اطباء جراحة كلى ومسالك بولية", "name": "د. علي ابو علان", "specialty": "", "phone": "0799808335", "city": "الزرقاء", "subregion": "", "address": "مستشفى جبل الزيتون", "id": 154, "ts": 153}, {"dept": "اطباء عظام ومفاصل", "name": "د. مهند الزعبي (استشاري المفاصل وجهاز العصبي والحركي)", "specialty": "", "phone": "0795025555", "city": "عمان", "subregion": "", "address": "الدوار الخامس – مقابل طوارئ المركز العربي مجمع ايوب الطبي ط4", "id": 155, "ts": 154}, {"dept": "اطباء عظام ومفاصل", "name": "د. جمال حسين قناش (مستشار اول جراحة عظام ومفاصل والكسور)", "specialty": "", "phone": "0796771855", "city": "عمان", "subregion": "", "address": "بجانب المركز العربي – شارع سليمان الحديدي – مجمع القيسي وراند خلف – الطابق الخامس", "id": 156, "ts": 155}, {"dept": "اطباء عظام ومفاصل", "name": "د. مالك غنيمات", "specialty": "", "phone": "0790226594", "city": "عمان", "subregion": "", "address": "شارع الخالدي", "id": 157, "ts": 156}, {"dept": "اطباء عظام ومفاصل", "name": "د. عمر حناتله (اخصائي جراحه العظام والمفاصل)", "specialty": "", "phone": "0796703693", "city": "عمان", "subregion": "", "address": "الدوار الخامس – مقابل عيادات المركز العربي", "id": 158, "ts": 157}, {"dept": "اطباء عظام ومفاصل", "name": "د. احمد قطيشات", "specialty": "", "phone": "0799926990", "city": "عمان", "subregion": "", "address": "الدوار الخامس – بجانب المركز العربي مجمع مطالقه 28 – ط4", "id": 159, "ts": 158}, {"dept": "اطباء عظام ومفاصل", "name": "د. ابراهيم قاسم", "specialty": "", "phone": "0797177793", "city": "عمان", "subregion": "", "address": "شارع الخالدي - مجمع بيترو الطابق الارضي", "id": 160, "ts": 159}, {"dept": "اطباء عظام ومفاصل", "name": "د. رضا الحتاتنه", "specialty": "", "phone": "0796087471", "city": "عمان", "subregion": "", "address": "جبل عمان مجمع خلف الطبي – الطابق الثالث", "id": 161, "ts": 160}, {"dept": "اطباء عظام ومفاصل", "name": "مركز ايليت للرعاية الصحية", "specialty": "", "phone": "0799901515/06-5501515", "city": "عمان", "subregion": "", "address": "شارع مكة – دوار الكيلو – مجمع كرمسون – الطابق الارضي", "id": 162, "ts": 161}, {"dept": "اطباء عظام ومفاصل", "name": "د. حمدي النقرش (استشاري)", "specialty": "", "phone": "0797402575", "city": "عمان", "subregion": "", "address": "عيادات ابن الهيثم – الطابق الارضي عياده 8", "id": 163, "ts": 162}, {"dept": "اطباء عظام ومفاصل", "name": "د. سفيان الرفاعي", "specialty": "", "phone": "0792429341", "city": "عمان", "subregion": "", "address": "تلاع العلي – شارع المدينه المنوره", "id": 164, "ts": 163}, {"dept": "اطباء عظام ومفاصل", "name": "د. علاء يوسف عقل (استشاري جراحة العظام والمفاصل والعمود الفقري)", "specialty": "", "phone": "0796888798", "city": "عمان", "subregion": "", "address": "عيادات ابن الهيثم – عياده رقم 309", "id": 165, "ts": 164}, {"dept": "اطباء عظام ومفاصل", "name": "د. مازن كردية (استشاري)", "specialty": "", "phone": "0795544993", "city": "عمان", "subregion": "", "address": "شارع المدينه المنوره – عيادات مستشفى ابن الهيثم", "id": 166, "ts": 165}, {"dept": "اطباء عظام ومفاصل", "name": "د. سرور احمد سرور", "specialty": "", "phone": "06-5676995/0795603143", "city": "عمان", "subregion": "", "address": "الشميساني – مجمع الحسيني الطبي 1", "id": 167, "ts": 166}, {"dept": "اطباء عظام ومفاصل", "name": "د. صلاح الدرادكة", "specialty": "", "phone": "0790527675", "city": "عمان", "subregion": "", "address": "مستشفى الرشيد", "id": 168, "ts": 167}, {"dept": "اطباء عظام ومفاصل", "name": "د. محمد ابو عين (استشاري جراحة العظام والمفاصل)", "specialty": "", "phone": "0798817818/0777490490", "city": "عمان", "subregion": "", "address": "شارع الاردن مستشفى الرشيد", "id": 169, "ts": 168}, {"dept": "اطباء عظام ومفاصل", "name": "د. ايمن البطوش (استشاري جراحة العظام والمفاصل)", "specialty": "", "phone": "0788036006", "city": "عمان", "subregion": "", "address": "شارع الاردن – عيادات مستشفى الرويال", "id": 170, "ts": 169}, {"dept": "اطباء عظام ومفاصل", "name": "د. وسام العطار", "specialty": "", "phone": "0795135751", "city": "عمان", "subregion": "", "address": "شارع الاردن – عيادات مستشفى الرويال", "id": 171, "ts": 170}, {"dept": "اطباء عظام ومفاصل", "name": "د. علاء الدين صالح", "specialty": "", "phone": "0797514612", "city": "عمان", "subregion": "", "address": "عيادات مستشفى الرويال", "id": 172, "ts": 171}, {"dept": "اطباء عظام ومفاصل", "name": "د. قصي قرقز", "specialty": "", "phone": "0799497246", "city": "عمان", "subregion": "", "address": "عيادات مستشفى الرشيد", "id": 173, "ts": 172}, {"dept": "اطباء عظام ومفاصل", "name": "د. ايهم مراد", "specialty": "", "phone": "0799087075", "city": "عمان", "subregion": "", "address": "جبل الحسين شارع الرازي", "id": 174, "ts": 173}, {"dept": "اطباء عظام ومفاصل", "name": "د. مالك ابو النادي", "specialty": "", "phone": "06-5634388/0797985015", "city": "عمان", "subregion": "", "address": "مستشفى الاستقلال - العيادات الخارجية – ط2 - عياده رقم 206", "id": 175, "ts": 174}, {"dept": "اطباء عظام ومفاصل", "name": "د. محمود البشتاوي", "specialty": "", "phone": "0795083333", "city": "عمان", "subregion": "", "address": "عيادات مستشفى الاستقلال ط4", "id": 176, "ts": 175}, {"dept": "اطباء عظام ومفاصل", "name": "د. عبد اللطيف ابو حسين (استشاري جراحة العظام والمفاصل)", "specialty": "", "phone": "0795083333", "city": "عمان", "subregion": "", "address": "مستشفى الاسراء – العيادات الخارجية - ط1 – عيادة 16", "id": 177, "ts": 176}, {"dept": "اطباء عظام ومفاصل", "name": "د. محمد ابو عبود", "specialty": "", "phone": "0799739056", "city": "عمان", "subregion": "", "address": "البيادر - اشارة عطا علي مجمع النعيمات 2", "id": 178, "ts": 177}, {"dept": "اطباء عظام ومفاصل", "name": "د. فؤاد صالح الشرع", "specialty": "", "phone": "0790114183", "city": "عمان", "subregion": "", "address": "البيادر – الشارع الرئيسي – مجمع سعد بلازا مول – الطابق الاول", "id": 179, "ts": 178}, {"dept": "اطباء عظام ومفاصل", "name": "د. اياد العضايلة", "specialty": "", "phone": "0797274050", "city": "عمان", "subregion": "", "address": "مرج الحمام", "id": 180, "ts": 179}, {"dept": "اطباء عظام ومفاصل", "name": "عيادات العصفور الطبية (30%)", "specialty": "", "phone": "0770041412", "city": "عمان", "subregion": "", "address": "مرج الحمام – شارع المنتخب الوطني – مجمع بنك الاتحاد", "id": 181, "ts": 180}, {"dept": "اطباء عظام ومفاصل", "name": "د. خالد يحيى تيم", "specialty": "", "phone": "06-4734331", "city": "عمان", "subregion": "", "address": "الوحدات – شارع قرية الطيبات – بجانب البنك العربي", "id": 182, "ts": 181}, {"dept": "اطباء عظام ومفاصل", "name": "د. ايهم مراد", "specialty": "", "phone": "0798528920", "city": "الزرقاء", "subregion": "", "address": "الرصيفه – الجبل الشمالي – فوق بنك التجاري", "id": 183, "ts": 182}, {"dept": "مراكز العلاج الطبيعي", "name": "مركز Be good للعلاج الطبيعي", "specialty": "", "phone": "0795454204", "city": "عمان", "subregion": "", "address": "الخامس – مقابل المركز العربي – مجمع النبر – طابق 2", "id": 184, "ts": 183}, {"dept": "مراكز العلاج الطبيعي", "name": "مركز اميسا للعلاج الطبيعي", "specialty": "", "phone": "0792221336", "city": "عمان", "subregion": "", "address": "شارع ابن خلدون", "id": 185, "ts": 184}, {"dept": "مراكز العلاج الطبيعي", "name": "مركز سما العاصمه للعلاج الطبيعي", "specialty": "", "phone": "0791513030", "city": "عمان", "subregion": "", "address": "الدوار الخامس – عمارة جمعيان الطابق 2", "id": 186, "ts": 185}, {"dept": "مراكز العلاج الطبيعي", "name": "مركز احمد الخطيب للتدليك و المساج", "specialty": "", "phone": "0796492156", "city": "عمان", "subregion": "", "address": "الصويفيه – شارع القمه", "id": 187, "ts": 186}, {"dept": "مراكز العلاج الطبيعي", "name": "مركز Be good للعلاج الطبيعي", "specialty": "", "phone": "0770668811", "city": "عمان", "subregion": "", "address": "الصويفيه – بجانب عباد الرحمن – عمارة كنعان العقاريه – ط2", "id": 188, "ts": 187}, {"dept": "مراكز العلاج الطبيعي", "name": "مركز الخطوة السليمه للعلاج الطبيعي", "specialty": "", "phone": "0799309422", "city": "عمان", "subregion": "", "address": "الشميساني – شارع الامير شاكر بن زيد بجانب عمارة بنك الاسكان الجديده", "id": 189, "ts": 188}, {"dept": "مراكز العلاج الطبيعي", "name": "مركز الاتكال Physion Car Group", "specialty": "", "phone": "0799899001", "city": "عمان", "subregion": "", "address": "الدوار الخامس – مجمع يافا الطبي – مقابل المركز العربي", "id": 190, "ts": 189}, {"dept": "مراكز العلاج الطبيعي", "name": "مركز الخطوة الافضل للعلاج الطبيعي", "specialty": "", "phone": "0799309422", "city": "عمان", "subregion": "", "address": "شارع المدينه المنوره – مجمع الكسواني", "id": 191, "ts": 190}, {"dept": "مراكز العلاج الطبيعي", "name": "مركز Be good للعلاج الطبيعي", "specialty": "", "phone": "06-5662235/0797733555", "city": "عمان", "subregion": "", "address": "دابوق - شارع المدينه المنوره - مجمع الدلاهمه سنتر الطابق 3", "id": 192, "ts": 191}, {"dept": "مراكز العلاج الطبيعي", "name": "مركز Be good للعلاج الطبيعي", "specialty": "", "phone": "0778855665/06-5153217", "city": "عمان", "subregion": "", "address": "ابو نصير - مجمع العجلوني التجاري - ط1", "id": 193, "ts": 192}, {"dept": "مراكز العلاج الطبيعي", "name": "مركز الخطى الواثقة للعلاج الطبيعي", "specialty": "", "phone": "0792727877", "city": "عمان", "subregion": "", "address": "ماركا الشمالية – الشارع الرئيسي", "id": 194, "ts": 193}, {"dept": "مراكز العلاج الطبيعي", "name": "مركز الوحدات للعلاج الطبيعي", "specialty": "", "phone": "0779840359/06-4734332", "city": "عمان", "subregion": "", "address": "الوحدات – نزول قرية الطيبات – بجانب البنك العربي", "id": 195, "ts": 194}, {"dept": "مراكز العلاج الطبيعي", "name": "مركز البيدر للعلاج الطبيعي", "specialty": "", "phone": "0797057733", "city": "الزرقاء", "subregion": "", "address": "الاتوستراد – بين مستشفى الزيتون وسامح مول", "id": 196, "ts": 195}, {"dept": "مراكز العلاج الطبيعي", "name": "مركز امان للعلاج الطبيعي", "specialty": "", "phone": "0788172529", "city": "الزرقاء", "subregion": "", "address": "ياجوز - الجبل الشمالي", "id": 197, "ts": 196}, {"dept": "مراكز العلاج الطبيعي", "name": "مركز وقاية للعلاج الطبيعي", "specialty": "", "phone": "077551090", "city": "الزرقاء", "subregion": "", "address": "الزرقاء الجديده", "id": 198, "ts": 197}, {"dept": "مراكز العلاج الطبيعي", "name": "مركز الذروه للعلاج الطبيعي", "specialty": "", "phone": "0798772099", "city": "اربد", "subregion": "", "address": "اشارة المحافظه – عمارة الخضر سنتر ط3", "id": 199, "ts": 198}, {"dept": "مراكز الاشعة التشخيصية", "name": "مركز ادفا كلينك", "specialty": "", "phone": "06-5934429", "city": "عمان", "subregion": "", "address": "الدوار الخامس – شارع سليمان الحديدي 15", "id": 200, "ts": 199}, {"dept": "مراكز الاشعة التشخيصية", "name": "المركز العربي الامريكي", "specialty": "", "phone": "0799260812", "city": "عمان", "subregion": "", "address": "الشميساني- مجمع كالفورنيا", "id": 201, "ts": 200}, {"dept": "مراكز الاشعة التشخيصية", "name": "مركز جوسانتي", "specialty": "", "phone": "0785804444", "city": "عمان", "subregion": "", "address": "الدوار السابع – مقابل المدارس الامريكيه – خلف مسجد ابو عيشه", "id": 202, "ts": 201}, {"dept": "مراكز الاشعة التشخيصية", "name": "مركز تكنوري للاشعه والرنين المغناطيسي", "specialty": "", "phone": "0777938281/06-5864530", "city": "عمان", "subregion": "", "address": "البيادر – الشارع الرئيسي – مقابل حلويات النجمه – عمارة 44", "id": 203, "ts": 202}, {"dept": "مراكز الاشعة التشخيصية", "name": "المراكز الدولية للاشعه الطبية (MED RAY)", "specialty": "", "phone": "0791005858", "city": "عمان", "subregion": "", "address": "خلا – بجانب مستشفى السعودي – مجمع الشرمان", "id": 204, "ts": 203}, {"dept": "مراكز الاشعة التشخيصية", "name": "عيادة التشخيص الافضل", "specialty": "", "phone": "0790522622", "city": "عمان", "subregion": "", "address": "الشميساني – مجمع الحسيني الطبي", "id": 205, "ts": 204}, {"dept": "مراكز الاشعة التشخيصية", "name": "مركز التيسير للتصوير الطبي", "specialty": "", "phone": "0795009264", "city": "عمان", "subregion": "", "address": "الشميساني – مجمع الحسيني الطبي", "id": 206, "ts": 205}, {"dept": "مراكز الاشعة التشخيصية", "name": "مركز ارغون للاشعة التشخيصيه والرنين المغناطيسي", "specialty": "", "phone": "0795114970/06-5681226", "city": "عمان", "subregion": "", "address": "الشميساني – خلف مستشفى التخصصي – مجمع الرياض ط الارضي", "id": 207, "ts": 206}, {"dept": "مراكز الاشعة التشخيصية", "name": "المراكز الدولية للاشعه الطبية (MED RAY)", "specialty": "", "phone": "0791005858", "city": "عمان", "subregion": "", "address": "الشميساني – مقابل مستشفى التخصصي – مجمع الحسيني الطابق الاول", "id": 208, "ts": 207}, {"dept": "مراكز الاشعة التشخيصية", "name": "المراكز الدولية للاشعه الطبية (MED RAY)", "specialty": "", "phone": "0791005858", "city": "عمان", "subregion": "", "address": "الدوار الثالث – بجانب مستشفى فرح – مجمع البسمه", "id": 209, "ts": 208}, {"dept": "مراكز الاشعة التشخيصية", "name": "المراكز الدولية للاشعه الطبية (MED RAY)", "specialty": "", "phone": "0791005858", "city": "عمان", "subregion": "", "address": "جبل عمان – مقابل م. الاردن – مجمع الصفا 3", "id": 210, "ts": 209}, {"dept": "مراكز الاشعة التشخيصية", "name": "المراكز الدولية للاشعه الطبية (MED RAY)", "specialty": "", "phone": "0791005858", "city": "عمان", "subregion": "", "address": "الدوار الرابع – شارع الخالدي – مجمع الرخاء الطبي 54", "id": 211, "ts": 210}, {"dept": "مراكز الاشعة التشخيصية", "name": "المراكز الدولية للاشعه الطبية (MED RAY)", "specialty": "", "phone": "0791005858", "city": "عمان", "subregion": "", "address": "الدوار الرابع – شارع ابن خلدون – مجمع ماغي", "id": 212, "ts": 211}, {"dept": "مراكز الاشعة التشخيصية", "name": "المراكز الدولية للاشعه الطبية (MED RAY)", "specialty": "", "phone": "0791005858", "city": "عمان", "subregion": "", "address": "الدوار الرابع - شارع ابن خلدون - مجمع الجوهره", "id": 213, "ts": 212}, {"dept": "مراكز الاشعة التشخيصية", "name": "مركز الشهم للاشعة التشخيصية", "specialty": "", "phone": "0790992199", "city": "عمان", "subregion": "", "address": "حي نزال – نهاية شارع الدستور – مجمع نسيم الطبي – الطابق الثالث", "id": 214, "ts": 213}, {"dept": "مراكز الاشعة التشخيصية", "name": "مركز مكه للاشعه و الرنين المغناطيسي", "specialty": "", "phone": "0795264431", "city": "عمان", "subregion": "", "address": "الوحدات – مقابل المركز الامني", "id": 215, "ts": 214}, {"dept": "مراكز الاشعة التشخيصية", "name": "مركز الدكتور طه شهاب للرنين المغناطيسي", "specialty": "", "phone": "0796198520", "city": "عمان", "subregion": "", "address": "جبل الحسين – شارع الرازي – مقابل الضمان الاجتماعي – عماره 124", "id": 216, "ts": 215}, {"dept": "مراكز الاشعة التشخيصية", "name": "مركز الدكتور انس دعمه للاشعه التشخيصيه", "specialty": "", "phone": "0777722138", "city": "الزرقاء", "subregion": "", "address": "الرصيفه – حي الرشيد – فوق بنك صفوه", "id": 217, "ts": 216}, {"dept": "مراكز الاشعة التشخيصية", "name": "مركز الكريم للاشعه التشخيصية", "specialty": "", "phone": "0785823788", "city": "الزرقاء", "subregion": "", "address": "الزرقاء الجديدة – فوق سامح مول – مجمع البارئ الطبي ط3", "id": 218, "ts": 217}, {"dept": "مراكز سمعيات", "name": "شركة اختياركم للمستلزمات الطبيه (اختيارك للحلول السمعية المبتكرة)", "specialty": "", "phone": "06-4654845", "city": "عمان", "subregion": "", "address": "جبل عمان – شارع ابن خلدون – مجمع لؤي 67", "id": 219, "ts": 218}, {"dept": "مراكز سمعيات", "name": "Vetro Medica - مركز الخبراء للسمعيات والنطق", "specialty": "", "phone": "06-4601818/0790878022", "city": "عمان", "subregion": "", "address": "شارع الخالدي – عمارة بجانب اتحاد المستشارين", "id": 220, "ts": 219}, {"dept": "مراكز سمعيات", "name": "شركة اختياركم للمستلزمات الطبيه (اختيارك للحلول السمعية المبتكرة)", "specialty": "", "phone": "0797110872/06-5685621", "city": "عمان", "subregion": "", "address": "الشميساني – شارع جابر بن حيان – مقابل المستشفى التخصصي", "id": 221, "ts": 220}, {"dept": "مراكز سمعيات", "name": "الرابطه الشرق اوسطية للعنايه بالسمع", "specialty": "", "phone": "0796526652/06-5530499", "city": "عمان", "subregion": "", "address": "شارع وصفي التل – عماره 195", "id": 222, "ts": 221}, {"dept": "مراكز سمعيات", "name": "مركز التواصل الفعال للنطق", "specialty": "", "phone": "0790095115", "city": "عمان", "subregion": "", "address": "جبل الحسين – دوار الداخلية – شارع الرازي – عمارة المجدلاوي (122) الطابق الاول", "id": 223, "ts": 222}, {"dept": "مراكز سمعيات", "name": "شركة اختياركم للمستلزمات الطبيه (اختيارك للحلول السمعية المبتكرة)", "specialty": "", "phone": "0797110872/06-5652896", "city": "عمان", "subregion": "", "address": "جبل الحسين – شارع بنر السبع – بجانب الاراضي المقدسة للتامين", "id": 224, "ts": 223}, {"dept": "مراكز سمعيات", "name": "شركة اختياركم للمستلزمات الطبيه (اختيارك للحلول السمعية المبتكرة)", "specialty": "", "phone": "0797110872/05-3970098", "city": "الزرقاء", "subregion": "", "address": "شارع السعاده – مجمع ابو دواس ط2", "id": 225, "ts": 224}, {"dept": "مراكز سمعيات", "name": "مركز الخبراء للسمعيات", "specialty": "", "phone": "0791907028", "city": "الزرقاء", "subregion": "", "address": "م. الزيتون – مجمع الاستشاري", "id": 226, "ts": 225}, {"dept": "مراكز التغذية", "name": "د. فادية الريحان", "specialty": "", "phone": "0775990075", "city": "عمان", "subregion": "", "address": "الشميساني – مجمع فيرست ميد", "id": 227, "ts": 226}, {"dept": "مراكز التغذية", "name": "مركز ليندا للتغذية", "specialty": "", "phone": "0798021473", "city": "عمان", "subregion": "", "address": "الجاردنز - فوق ديفان كيك – الطابق الثالث", "id": 228, "ts": 227}, {"dept": "مراكز التغذية", "name": "مركز ليندا للتغذية", "specialty": "", "phone": "0790416269", "city": "عمان", "subregion": "", "address": "جبل الحسين – بجانب مستشفى هبة الحسيني – مول ط4", "id": 229, "ts": 228}, {"dept": "مراكز التغذية", "name": "مركز ليندا للتغذية", "specialty": "", "phone": "0795469187/0791140253/0791140249", "city": "عمان", "subregion": "", "address": "طبربور – مقابل حلويات نفيسة – مجمع البارئ الطبي – طابق 2", "id": 230, "ts": 229}, {"dept": "مراكز التغذية", "name": "مركز التغذية الذكية", "specialty": "", "phone": "0796124232", "city": "عمان", "subregion": "", "address": "طبربور2 - اشارات طبربور - مجمع الاهوار بجانب فيجا فتنس - ط2", "id": 231, "ts": 230}, {"dept": "مراكز التغذية", "name": "مركز التغذية الذكية", "specialty": "", "phone": "0796662480", "city": "عمان", "subregion": "", "address": "فتنس1 طبربور - اشارة طارق - الاهوار مول - ط1", "id": 232, "ts": 231}, {"dept": "مراكز التغذية", "name": "مركز ليندا للتغذية", "specialty": "", "phone": "0782000723", "city": "عمان", "subregion": "", "address": "الجبيهه – اشارة الجبيهة – بجانب مختبرات المدلاب", "id": 233, "ts": 232}, {"dept": "مراكز التغذية", "name": "مركز ليندا للتغذية", "specialty": "", "phone": "0788749040", "city": "عمان", "subregion": "", "address": "مرج الحمام – دوار الدله – مجمع حسن البرديني", "id": 234, "ts": 233}, {"dept": "مراكز التغذية", "name": "مركز ليندا للتغذية", "specialty": "", "phone": "0782000786", "city": "عمان", "subregion": "", "address": "ضاحية الياسمين – شارع جبل عرفات – مجمع طبيبك – الطابق الثاني", "id": 235, "ts": 234}, {"dept": "مراكز التغذية", "name": "مركز ليندا للتغذية", "specialty": "", "phone": "0788159598/0795238166", "city": "عمان", "subregion": "", "address": "صويلح – شارع الاميرهيا – مقابل مخازن العساف – مجمع 61", "id": 236, "ts": 235}, {"dept": "مراكز التغذية", "name": "مركز ليندا للتغذية", "specialty": "", "phone": "0791140259/0791140258", "city": "السلط", "subregion": "", "address": "الدبابنه – عند البنك الاسلامي – مجمع فانق دباس", "id": 237, "ts": 236}, {"dept": "مراكز التغذية", "name": "مركز ليندا للتغذية", "specialty": "", "phone": "0798346503", "city": "عمان", "subregion": "", "address": "ماركا الشماليه - فوق العلاونه للصرافة – ط2", "id": 238, "ts": 237}, {"dept": "مراكز التغذية", "name": "مركز حمية ورشاقه للاستشارات الغذائيه", "specialty": "", "phone": "0796932323", "city": "عجلون", "subregion": "", "address": "بجانب الاتصالات – مدخل عيادات نبض الطبيه", "id": 239, "ts": 238}, {"dept": "مراكز التغذية", "name": "مركز التغذية الذكية", "specialty": "", "phone": "0796668928", "city": "اربد", "subregion": "", "address": "مجمع عمان الجديد – صيداوي سنتر ط3", "id": 240, "ts": 239}, {"dept": "مراكز التغذية", "name": "رغد خنجر", "specialty": "", "phone": "0776832819", "city": "اربد", "subregion": "", "address": "شارع وصفي التل شارع ابو راشد - مركز جوساني", "id": 241, "ts": 240}, {"dept": "صيدليات (Drug Center)", "name": "الوحدات", "specialty": "", "phone": "0785977947", "city": "عمان", "subregion": "", "address": "شارع مأدبا مقابل دخلة الرشاد مجمع برماوي وحداد بناية 252", "id": 242, "ts": 241}, {"dept": "صيدليات (Drug Center)", "name": "حطين", "specialty": "", "phone": "0785977937", "city": "عمان", "subregion": "", "address": "شارع الامير حسن قرب اشارة كلية حطين بناية 464", "id": 243, "ts": 242}, {"dept": "صيدليات (Drug Center)", "name": "أبو علندا", "specialty": "", "phone": "0785924229", "city": "عمان", "subregion": "", "address": "شارع ابراهيم الراشد الحنيطي مقابل بنك الاسكان بناية 25", "id": 244, "ts": 243}, {"dept": "صيدليات (Drug Center)", "name": "أبو علندا 2", "specialty": "", "phone": "0785924229", "city": "عمان", "subregion": "", "address": "شارع محمد بن عبدالملك بناية 20", "id": 245, "ts": 244}, {"dept": "صيدليات (Drug Center)", "name": "الصويفية", "specialty": "", "phone": "0787745503", "city": "عمان", "subregion": "", "address": "شارع عبد الرحيم الحاج امام مبنى ماكدونالدز بناية 15", "id": 246, "ts": 245}, {"dept": "صيدليات (Drug Center)", "name": "دابوق", "specialty": "", "phone": "0785977949", "city": "عمان", "subregion": "", "address": "شارع الملك عبدالله الثاني اشارة المواصفات والمقاييس بناية 20", "id": 247, "ts": 246}, {"dept": "صيدليات (Drug Center)", "name": "مرج الحمام", "specialty": "", "phone": "0782966399", "city": "عمان", "subregion": "", "address": "ش. الاميرة تغريد بن محمد مجمع 70", "id": 248, "ts": 247}, {"dept": "صيدليات (Drug Center)", "name": "جبل الحسين", "specialty": "", "phone": "0788111874", "city": "عمان", "subregion": "", "address": "شارع اللد عمارة كريم سنتر مقابل ابو شيخة للصرافة", "id": 249, "ts": 248}, {"dept": "صيدليات (Drug Center)", "name": "الياسمين", "specialty": "", "phone": "0788111052", "city": "عمان", "subregion": "", "address": "شارع الامير هاشم 269 بافيليون مول - الطابق الارضي", "id": 250, "ts": 249}, {"dept": "صيدليات (Drug Center)", "name": "الخالدي جبل عمان", "specialty": "", "phone": "0788111038", "city": "عمان", "subregion": "", "address": "خلف حديقة زهران - شارع المتنبي بناية 53", "id": 251, "ts": 250}, {"dept": "صيدليات (Drug Center)", "name": "فرع النزهة", "specialty": "", "phone": "0788111048", "city": "عمان", "subregion": "", "address": "جبل النزهة ش. السلطان قلوون مجمع 28", "id": 252, "ts": 251}, {"dept": "صيدليات (Drug Center)", "name": "فرع المدينة الرياضية", "specialty": "", "phone": "0788111045", "city": "عمان", "subregion": "", "address": "شارع الشهيد بناية 57", "id": 253, "ts": 252}, {"dept": "صيدليات (Drug Center)", "name": "فرع الشميساني", "specialty": "", "phone": "0788111846", "city": "عمان", "subregion": "", "address": "شارع الشريف عبد الحميد شرف بناية 117", "id": 254, "ts": 253}, {"dept": "صيدليات (Drug Center)", "name": "فرع الدوار السادس", "specialty": "", "phone": "0788111049", "city": "عمان", "subregion": "", "address": "شارع الاميرة علياء بناية 13", "id": 255, "ts": 254}, {"dept": "صيدليات (Drug Center)", "name": "فرع الهاشمي", "specialty": "", "phone": "0788111928", "city": "عمان", "subregion": "", "address": "الهاشمي الشمالي شارع الامير راشد بن الحسن بناية 187", "id": 256, "ts": 255}, {"dept": "صيدليات (Drug Center)", "name": "فرع الزرقاء - مدينة الشرق", "specialty": "", "phone": "0788111063", "city": "الزرقاء", "subregion": "", "address": "مدينة الشرق - قرب دوار الجيزة", "id": 257, "ts": 256}, {"dept": "صيدليات (Drug Center)", "name": "فرع ماركا", "specialty": "", "phone": "0788111064", "city": "عمان", "subregion": "", "address": "حي الشماليات - الجيش (اونستراد الزرقاء) - قرب جامعة البلقاء", "id": 258, "ts": 257}, {"dept": "صيدليات (Drug Center)", "name": "طبربور", "specialty": "", "phone": "0785977957", "city": "عمان", "subregion": "", "address": "شارع الشهيد قبل اشارات ليالي الشرق بناية رقم 364", "id": 259, "ts": 258}, {"dept": "صيدليات (Drug Center)", "name": "طبربور 2", "specialty": "", "phone": "0788111813", "city": "عمان", "subregion": "", "address": "طبربور - ش. الشهيد - بناية 346", "id": 260, "ts": 259}, {"dept": "صيدليات (Drug Center)", "name": "طبربور 3", "specialty": "", "phone": "0788111931", "city": "عمان", "subregion": "", "address": "طبربور / شارع طارق / بناية رقم 61", "id": 261, "ts": 260}, {"dept": "صيدليات (Drug Center)", "name": "عرجان", "specialty": "", "phone": "0785585002", "city": "عمان", "subregion": "", "address": "شارع الشهيد - مقابل مدارس المشفور", "id": 262, "ts": 261}, {"dept": "صيدليات (Drug Center)", "name": "تلاع العلي", "specialty": "", "phone": "0785953595", "city": "عمان", "subregion": "", "address": "شارع وصفي التل قرب اشارة البيشتوني بناية رقم 214", "id": 263, "ts": 262}, {"dept": "صيدليات (Drug Center)", "name": "شارع مكة", "specialty": "", "phone": "0785953393", "city": "عمان", "subregion": "", "address": "شارع مكة مقابل دخلة ام السماق بناية رقم 205", "id": 264, "ts": 263}, {"dept": "صيدليات (Drug Center)", "name": "خلدا", "specialty": "", "phone": "0785552441", "city": "عمان", "subregion": "", "address": "امتداد شارع الجاردنز قبل جسر دابوق بناية رقم 360", "id": 265, "ts": 264}, {"dept": "صيدليات (Drug Center)", "name": "عبدون", "specialty": "", "phone": "0788111767", "city": "عمان", "subregion": "", "address": "عبدون - ش. الامير علي بناية رقم 86", "id": 266, "ts": 265}, {"dept": "صيدليات (Drug Center)", "name": "المدينة المنورة", "specialty": "", "phone": "07598688", "city": "عمان", "subregion": "", "address": "شارع المدينة المنورة تجاه جسر الجامعة الاردنية قبل مستشفى ابن الهيثم بناية رقم 244", "id": 267, "ts": 266}, {"dept": "صيدليات (Drug Center)", "name": "الجامعة", "specialty": "", "phone": "0788111812", "city": "عمان", "subregion": "", "address": "ش. خليل السالت بناية رقم 2", "id": 268, "ts": 267}, {"dept": "اخصائي روماتيزم و مفاصل", "name": "د. زهير الصباغ", "specialty": "", "phone": "06-5674303", "city": "عمان", "subregion": "", "address": "جبل الحسين - مجمع سكينه الطابق 3", "id": 269, "ts": 268}, {"dept": "اخصائي روماتيزم و مفاصل", "name": "د. يوسف صلاح", "specialty": "", "phone": "06-5691160", "city": "عمان", "subregion": "", "address": "جبل الحسين - عماره الجقه بجانب وزارة الصحه", "id": 270, "ts": 269}, {"dept": "اخصائي روماتيزم و مفاصل", "name": "د. محمد سميح ابو جبارة", "specialty": "", "phone": "0780546457", "city": "الزرقاء", "subregion": "", "address": "بجانب مستشفى جبل الزيتون", "id": 271, "ts": 270}, {"dept": "اطباء انف واذن وحنجرة", "name": "د. محمد الحياري (استشاري انف واذن وحنجرة)", "specialty": "", "phone": "0777771415", "city": "عمان", "subregion": "", "address": "عيادات مستشفى الاردن – مبنى المركز الطبي ط3 - عياده 5", "id": 272, "ts": 271}, {"dept": "اطباء انف واذن وحنجرة", "name": "د. انس محمد ابو شمله", "specialty": "", "phone": "0797276961", "city": "عمان", "subregion": "", "address": "عبدون", "id": 273, "ts": 272}, {"dept": "اطباء انف واذن وحنجرة", "name": "د. مصطفى عبدالله التايه", "specialty": "", "phone": "0795543504", "city": "عمان", "subregion": "", "address": "شارع الخالدي - مقابل مستشفى الخالدي – مجمع الحياه – رقم المجمع 40", "id": 274, "ts": 273}, {"dept": "اطباء انف واذن وحنجرة", "name": "د. عمار المومني (استشاري انف واذن وحنجرة)", "specialty": "", "phone": "0792097873", "city": "عمان", "subregion": "", "address": "عيادات المركز العربي", "id": 275, "ts": 274}, {"dept": "اطباء انف واذن وحنجرة", "name": "مركز ايليت للرعاية الطبية", "specialty": "", "phone": "0799901515/06-5501515", "city": "عمان", "subregion": "", "address": "شارع مكة – دوار الكيلو – مجمع كرمسون – الطابق الارضي", "id": 276, "ts": 275}, {"dept": "اطباء انف واذن وحنجرة", "name": "د. محمد رمزون (استشاري انف واذن وحنجرة)", "specialty": "", "phone": "0790595888", "city": "عمان", "subregion": "", "address": "خلدا – فوق مكتبة المنهل – عند اشارة البنك العربي", "id": 277, "ts": 276}, {"dept": "اطباء انف واذن وحنجرة", "name": "د. سميه الطوالبه (استشارية انف واذن وحنجرة)", "specialty": "", "phone": "0791421213", "city": "عمان", "subregion": "", "address": "شارع وصفي التل (خلدا) – مقابل عالية المركزي", "id": 278, "ts": 277}, {"dept": "اطباء انف واذن وحنجرة", "name": "د. فوزي الصاحب (استشاري انف واذن وحنجرة)", "specialty": "", "phone": "0775868780", "city": "عمان", "subregion": "", "address": "جبل الحسين – دوار الداخلية – شارع الرازي – مجمع عطية 149 – الطابق 4", "id": 279, "ts": 278}, {"dept": "اطباء انف واذن وحنجرة", "name": "د. مفلح السرحان (استشاري انف واذن وحنجرة)", "specialty": "", "phone": "0777440073", "city": "عمان", "subregion": "", "address": "عيادات مستشفى الرويال", "id": 280, "ts": 279}, {"dept": "اطباء انف واذن وحنجرة", "name": "د. نصر عبد القادر البطاينه (استشاري انف واذن وحنجرة)", "specialty": "", "phone": "0777886382", "city": "عمان", "subregion": "", "address": "دوار الواحة – مقابل مطعم طواحين الهوا – مجمع رياض العساف 165", "id": 281, "ts": 280}, {"dept": "اطباء انف واذن وحنجرة", "name": "د. محمد توفيق ابو طالب (استشاري انف واذن وحنجرة)", "specialty": "", "phone": "0790791156", "city": "عمان", "subregion": "", "address": "عيادات مستشفى الرويال", "id": 282, "ts": 281}, {"dept": "اطباء انف واذن وحنجرة", "name": "د. معاذ الجوارنه (استشاري انف واذن وحنجرة)", "specialty": "", "phone": "0795040058", "city": "عمان", "subregion": "", "address": "الشميساني – قرب التخصصي", "id": 283, "ts": 282}, {"dept": "اطباء انف واذن وحنجرة", "name": "د. محمد نور الدين عمر", "specialty": "", "phone": "0791554590", "city": "عمان", "subregion": "", "address": "عيادات مستشفى الرشيد", "id": 284, "ts": 283}, {"dept": "اطباء انف واذن وحنجرة", "name": "د. حسام القراله", "specialty": "", "phone": "0790094041", "city": "عمان", "subregion": "", "address": "مستشفى الرشيد / طبربور", "id": 285, "ts": 284}, {"dept": "اطباء انف واذن وحنجرة", "name": "د. حسن محمد النجار (استشاري انف واذن وحنجرة)", "specialty": "", "phone": "06-5300372/06-5300300", "city": "عمان", "subregion": "", "address": "شارع الجامعه – العيادات الخارجية مستشفى الاسراء – ط4 – عيادة 46", "id": 286, "ts": 285}, {"dept": "اطباء انف واذن وحنجرة", "name": "د. فؤاد قطب", "specialty": "", "phone": "0797941752", "city": "عمان", "subregion": "", "address": "شارع الجامعه اشارات الدوريات مجمع جمال العواملة الطابق 3", "id": 287, "ts": 286}, {"dept": "اطباء انف واذن وحنجرة", "name": "د. فضل محمود ابو زهره (استشاري انف واذن وحنجرة)", "specialty": "", "phone": "0790785649", "city": "عمان", "subregion": "", "address": "البيادر – الشارع الرئيسي – فوق بنك الاسكان – عمارة البايز – ط1", "id": 288, "ts": 287}, {"dept": "اطباء انف واذن وحنجرة", "name": "د. فؤاد كوكش (استشاري اول انف واذن وحنجرة)", "specialty": "", "phone": "0795065564", "city": "عمان", "subregion": "", "address": "بيادر وادي السير – مقابل البنك الاهلي – بناية السعد بلازا - ط1", "id": 289, "ts": 288}, {"dept": "اطباء انف واذن وحنجرة", "name": "د. مفلح الجادر السرحان (استشاري انف واذن وحنجرة)", "specialty": "", "phone": "0799018602", "city": "عمان", "subregion": "", "address": "البيادر - سعد بلازا مقابل البنك الاهلي – ط2", "id": 290, "ts": 289}, {"dept": "اطباء الحساسية والمناعة", "name": "د. فيصل محمد طبيلة", "specialty": "", "phone": "06-5695151", "city": "عمان", "subregion": "", "address": "جبل الحسين – شارع الرازي – عماره 145", "id": 291, "ts": 290}, {"dept": "اخصائي صدرية", "name": "د. خير المبيضين", "specialty": "", "phone": "0777316787", "city": "عمان", "subregion": "", "address": "جبل عمان – شارع الخالدي مجمع القريني الطابق الثاني عياده 208", "id": 292, "ts": 291}, {"dept": "اخصائي صدرية", "name": "د. محمد هاشم", "specialty": "", "phone": "06-4653388", "city": "عمان", "subregion": "", "address": "جبل عمان – شارع الخالدي مجمع ابو حسان", "id": 293, "ts": 292}, {"dept": "اخصائي صدرية", "name": "د. سمير ابراهيم", "specialty": "", "phone": "0782967639/06-5634373", "city": "عمان", "subregion": "", "address": "عيادات مستشفى الاستقلال الطابق الاول", "id": 294, "ts": 293}, {"dept": "اخصائي صدرية", "name": "د. توفيق عبد الهادي", "specialty": "", "phone": "06-5606391", "city": "عمان", "subregion": "", "address": "دوار الداخليه - شارع الرازي مجمع الشفاء", "id": 295, "ts": 294}, {"dept": "اخصائي صدرية", "name": "د. غيث مشاري ابو السمن", "specialty": "", "phone": "0795972297", "city": "عمان", "subregion": "", "address": "عيادات مستشفى الرشيد / عيادات ابن كثير - مادبا", "id": 296, "ts": 295}, {"dept": "اخصائي صدرية", "name": "د. محمود الشبول", "specialty": "", "phone": "0770277770", "city": "عمان", "subregion": "", "address": "البيادر - الشارع الرئيسي عماره رستم", "id": 297, "ts": 296}, {"dept": "اطباء الجهاز الهضمي", "name": "د. سمير الصمادي (جراحة الاورام والجهاز الهضمي)", "specialty": "", "phone": "0790062906", "city": "عمان", "subregion": "", "address": "الدوار الخامس – مركز حنانيا الطبي – مقابل م. العربي – الطابق السادس", "id": 298, "ts": 297}, {"dept": "اطباء الجهاز الهضمي", "name": "د. باسل الخالدي", "specialty": "", "phone": "06-5564400", "city": "عمان", "subregion": "", "address": "مستشفى السعودي", "id": 299, "ts": 298}, {"dept": "اطباء الجهاز الهضمي", "name": "د. محمد صلاح", "specialty": "", "phone": "0770929120", "city": "عمان", "subregion": "", "address": "الدوار الخامس – بجانب المركز العربي – مجمع بدر – ط3", "id": 300, "ts": 299}, {"dept": "اطباء الجهاز الهضمي", "name": "د. حمدي شعبان (استشاري امراض جهاز الهضمي والكبد)", "specialty": "", "phone": "0798243399/0798224522", "city": "عمان", "subregion": "", "address": "عيادات مستشفى الرويال", "id": 301, "ts": 300}, {"dept": "اطباء الجهاز الهضمي", "name": "د. ايمن سعد باشا", "specialty": "", "phone": "0795311152", "city": "عمان", "subregion": "", "address": "عيادات مستشفى الرشيد", "id": 302, "ts": 301}, {"dept": "اطباء الجهاز الهضمي", "name": "د. محمود حلوه (استشاري امراض الجهاز الهضمي)", "specialty": "", "phone": "06-5300300 فرعي 6121", "city": "عمان", "subregion": "", "address": "شارع الجامعه – عيادات مستشفى الاسراء ط1 – عياده 12", "id": 303, "ts": 302}, {"dept": "اطباء الجهاز الهضمي", "name": "د. محمد تيسير ابو رجب (استشاري اول امراض جهاز هضمي)", "specialty": "", "phone": "0795578616", "city": "عمان", "subregion": "", "address": "عيادات مستشفى الاستقلال – ط الارضي – عيادة 3", "id": 304, "ts": 303}, {"dept": "اطباء الجهاز الهضمي", "name": "د. ايمن مشعل", "specialty": "", "phone": "0795109443", "city": "عمان", "subregion": "", "address": "مستشفى الاستقلال العيادات الخارجيه الطابق 4", "id": 305, "ts": 304}, {"dept": "اطباء الجهاز الهضمي", "name": "د. عيسى حيمور", "specialty": "", "phone": "0795589558", "city": "عمان", "subregion": "", "address": "الفحيص", "id": 306, "ts": 305}, {"dept": "اطباء الجهاز الهضمي", "name": "د. عمر جرار", "specialty": "", "phone": "0798243399", "city": "الزرقاء", "subregion": "", "address": "مستشفى جبل الزيتون مجمع الاستشارين الطابق الارضي", "id": 307, "ts": 306}, {"dept": "اطباء الجهاز الهضمي", "name": "د. علاء البيرودي", "specialty": "", "phone": "0795118149", "city": "الزرقاء", "subregion": "", "address": "مستشفى جبل الزيتون", "id": 308, "ts": 307}, {"dept": "اخصائي غدد صماء وسكري", "name": "د. احمد خير (استشاري غدد صماء وسكرى)", "specialty": "", "phone": "0777772350/06-4633303", "city": "عمان", "subregion": "", "address": "جبل عمان – شارع الخالدي – مجمع الفا – رقم 51 – ط1", "id": 309, "ts": 308}, {"dept": "اخصائي غدد صماء وسكري", "name": "د. سامي حداد", "specialty": "", "phone": "06-4644828", "city": "عمان", "subregion": "", "address": "جبل عمان – شارع الخالدي – مجمع فيضي – رقم 32 – فوق صيدلية روحي", "id": 310, "ts": 309}, {"dept": "اخصائي غدد صماء وسكري", "name": "د. عمر غازي ابوفرسخ", "specialty": "", "phone": "06-5205555 فرعي 6066", "city": "عمان", "subregion": "", "address": "عيادات مستشفى ابن الهيثم", "id": 311, "ts": 310}, {"dept": "اخصائي غدد صماء وسكري", "name": "مركز ايليت للرعاية الطبية", "specialty": "", "phone": "0799901515", "city": "عمان", "subregion": "", "address": "شارع مكة – دوار الكيلو – مجمع كرمسون – الطابق الارضي", "id": 312, "ts": 311}, {"dept": "اخصائي غدد صماء وسكري", "name": "د. محمود العسود", "specialty": "", "phone": "0770211311", "city": "عمان", "subregion": "", "address": "سحاب - قرب دوار الشهيد بعد ابو زغله", "id": 313, "ts": 312}, {"dept": "اطباء دماغ و اعصاب", "name": "د. عمران جان بيك", "specialty": "", "phone": "0795044161", "city": "عمان", "subregion": "", "address": "م. الاستشاري – العيادات الخارجية 2", "id": 314, "ts": 313}, {"dept": "اطباء دماغ و اعصاب", "name": "د. امجد عدنان جرار", "specialty": "", "phone": "0799799075", "city": "عمان", "subregion": "", "address": "الدوار الخامس - مجمع عبدون الطبي", "id": 315, "ts": 314}, {"dept": "اطباء دماغ و اعصاب", "name": "عيادات نيورون", "specialty": "", "phone": "0797000800", "city": "عمان", "subregion": "", "address": "الدوار الخامس - عيادات عبدون – مقابل طوارئ المركز العربي – ط2", "id": 316, "ts": 315}, {"dept": "اطباء دماغ و اعصاب", "name": "د. ماهر عليان", "specialty": "", "phone": "0799583629", "city": "عمان", "subregion": "", "address": "جبل عمان – شارع ابو فراس الحمداني – مجمع البسمة الطبي – بناية 23", "id": 317, "ts": 316}, {"dept": "اطباء دماغ و اعصاب", "name": "د. وليد فايز الدباس", "specialty": "", "phone": "0799460595", "city": "عمان", "subregion": "", "address": "مستشفى الاستقلال – العيادات الخارجية – ط1 عياده رقم 1", "id": 318, "ts": 317}];
+const CITY_ORDER = ["عمان","الزرقاء","اربد","العقبة","السلط","مادبا","الكرك","معان","الطفيلة","جرش","عجلون","المفرق","الغور"];
+const ALL_DEPT = "__ALL__";
+const STORAGE_KEY = "clinicsAppDataV2";
+
+function loadData(){
+  let raw = localStorage.getItem(STORAGE_KEY);
+  if(raw){
+    try{
+      const parsed = JSON.parse(raw);
+      // Backward compatibility: convert the old single headerImage into the new array.
+      if(!Array.isArray(parsed.headerImages)){
+        parsed.headerImages = parsed.headerImage ? [parsed.headerImage] : [];
+      }
+      return parsed;
+    }catch(e){}
+  }
+  const depts = [];
+  SEED_ENTRIES.forEach(e=>{ if(!depts.includes(e.dept)) depts.push(e.dept); });
+  return { depts, entries: SEED_ENTRIES.slice(), headerImages: [] };
+}
+function saveData(){
+  try{
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  }catch(e){
+    alert('تعذر حفظ البيانات (قد تكون مساحة التخزين ممتلئة بسبب الصور). جرّب حذف بعض الصور القديمة.');
+  }
+}
+
+let state = loadData();
+let editingId = null;
+let currentImageData = null;
+let activeDept = state.depts[0] || null;
+let searchTerm = "";
+
+// Reads an image file, downsizes/compresses it so it doesn't bloat storage
+// or the PDF, then returns a base64 JPEG data URL via callback.
+function readImageFile(file, callback){
+  const reader = new FileReader();
+  reader.onload = function(evt){
+    const img = new Image();
+    img.onload = function(){
+      const maxDim = 800;
+      let w = img.width, h = img.height;
+      if(w > maxDim || h > maxDim){
+        if(w >= h){ h = Math.round(h * maxDim / w); w = maxDim; }
+        else { w = Math.round(w * maxDim / h); h = maxDim; }
+      }
+      const canvas = document.createElement('canvas');
+      canvas.width = w; canvas.height = h;
+      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+      callback(canvas.toDataURL('image/jpeg', 0.75));
+    };
+    img.onerror = function(){ alert('تعذر قراءة هذه الصورة.'); };
+    img.src = evt.target.result;
+  };
+  reader.onerror = function(){ alert('تعذر قراءة هذه الصورة.'); };
+  reader.readAsDataURL(file);
+}
+
+function cityIndex(city){
+  const i = CITY_ORDER.indexOf(city);
+  return i===-1 ? 999 : i;
+}
+
+function renderTabs(){
+  const tabs = document.getElementById('tabs');
+  tabs.innerHTML = "";
+  const allBtn = document.createElement('button');
+  allBtn.className = 'tab' + (activeDept===ALL_DEPT ? ' active':'');
+  allBtn.textContent = 'الكل (' + state.entries.length + ')';
+  allBtn.onclick = ()=>{ activeDept = ALL_DEPT; renderAll(); };
+  tabs.appendChild(allBtn);
+  state.depts.forEach(dep=>{
+    const cnt = state.entries.filter(e=>e.dept===dep).length;
+    const b = document.createElement('button');
+    b.className = 'tab' + (dep===activeDept ? ' active':'');
+    b.textContent = dep + ' (' + cnt + ')';
+    b.onclick = ()=>{ activeDept = dep; renderAll(); };
+    tabs.appendChild(b);
+  });
+  const addBtn = document.createElement('button');
+  addBtn.className = 'tab add';
+  addBtn.textContent = '+ قسم جديد';
+  addBtn.onclick = ()=>{
+    const name = prompt('اسم القسم الجديد:');
+    if(name && name.trim()){
+      state.depts.push(name.trim());
+      activeDept = name.trim();
+      saveData(); renderAll();
+    }
+  };
+  tabs.appendChild(addBtn);
+}
+
+function renderCount(){
+  document.getElementById('countLine').textContent =
+    'إجمالي العيادات: ' + state.entries.length + ' | عدد الأقسام: ' + state.depts.length;
+}
+
+function matchesSearch(e){
+  if(!searchTerm) return true;
+  const t = searchTerm.toLowerCase();
+  return (e.name||'').toLowerCase().includes(t) ||
+         (e.phone||'').toLowerCase().includes(t) ||
+         (e.address||'').toLowerCase().includes(t) ||
+         (e.specialty||'').toLowerCase().includes(t) ||
+         (e.city||'').toLowerCase().includes(t);
+}
+
+function renderCityGroups(container, entries, showDeptTag){
+  // group by city
+  const byCity = {};
+  entries.forEach(e=>{ (byCity[e.city] = byCity[e.city] || []).push(e); });
+  const cities = Object.keys(byCity).sort((a,b)=> cityIndex(a)-cityIndex(b) || a.localeCompare(b));
+
+  cities.forEach(city=>{
+    const block = document.createElement('div');
+    block.className = 'city-block';
+    const t = document.createElement('div');
+    t.className = 'city-title';
+    t.innerHTML = '<span>'+escapeHtml(city || "بدون محافظة")+'</span><span class="n">'+byCity[city].length+' عيادة</span>';
+    block.appendChild(t);
+    const list = byCity[city].slice().sort((a,b)=> (b.ts||0) - (a.ts||0));
+    list.forEach(e=>{
+      const row = document.createElement('div');
+      row.className = 'entry';
+      row.innerHTML = `
+        <div class="info">
+          <b>${escapeHtml(e.name)}</b> ${showDeptTag ? '<span style="font-size:11px;color:var(--sub)">['+escapeHtml(e.dept)+']</span>' : ''}
+          <div>${escapeHtml(e.specialty||'')}</div>
+          <div>📞 ${escapeHtml(e.phone||'')}</div>
+          <div>${escapeHtml(e.subregion? e.subregion+' - ':'')}${escapeHtml(e.address||'')}</div>
+        </div>
+        <div class="btns">
+          <button class="edit-btn">تعديل</button>
+          <button class="del-btn">حذف</button>
+        </div>`;
+      row.querySelector('.edit-btn').onclick = ()=> openForm(e);
+      row.querySelector('.del-btn').onclick = ()=>{
+        if(confirm('حذف هذه العيادة؟')){
+          state.entries = state.entries.filter(x=>x.id!==e.id);
+          saveData(); renderAll();
+        }
+      };
+      block.appendChild(row);
+    });
+    container.appendChild(block);
+  });
+}
+
+function renderList(){
+  const area = document.getElementById('listArea');
+  area.innerHTML = "";
+
+  if(searchTerm){
+    const entries = state.entries.filter(matchesSearch);
+    if(entries.length===0){ area.innerHTML = '<div class="empty">لا توجد نتائج.</div>'; return; }
+    renderCityGroups(area, entries, true);
+    return;
+  }
+
+  if(activeDept === ALL_DEPT){
+    if(state.entries.length===0){ area.innerHTML = '<div class="empty">لا توجد نتائج.</div>'; return; }
+    state.depts.forEach(dep=>{
+      const deptEntries = state.entries.filter(e=>e.dept===dep);
+      if(deptEntries.length===0) return;
+      const deptBlock = document.createElement('div');
+      deptBlock.className = 'dept-block';
+      const dt = document.createElement('div');
+      dt.className = 'dept-title';
+      dt.innerHTML = '<span>'+escapeHtml(dep)+'</span><span class="n">'+deptEntries.length+' عيادة</span>';
+      deptBlock.appendChild(dt);
+      renderCityGroups(deptBlock, deptEntries, false);
+      area.appendChild(deptBlock);
+    });
+    return;
+  }
+
+  if(!activeDept){ area.innerHTML = '<div class="empty">لا يوجد أقسام بعد. أضف قسمًا جديدًا.</div>'; return; }
+  const entries = state.entries.filter(e=>e.dept===activeDept);
+  if(entries.length===0){ area.innerHTML = '<div class="empty">لا توجد نتائج.</div>'; return; }
+  renderCityGroups(area, entries, false);
+}
+
+function escapeHtml(s){ return String(s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+function openForm(entry){
+  editingId = entry ? entry.id : null;
+  const card = document.getElementById('formCard');
+  card.style.display = 'block';
+  const deptOptions = state.depts.map(d=>`<option value="${escapeHtml(d)}" ${entry&&entry.dept===d?'selected':''}>${escapeHtml(d)}</option>`).join('');
+  const cityOptions = CITY_ORDER.map(c=>`<option value="${c}" ${entry&&entry.city===c?'selected':''}>${c}</option>`).join('');
+  card.innerHTML = `
+    <div class="grid">
+      <div><label>القسم</label>
+        <select id="f_dept">${deptOptions}</select>
+      </div>
+      <div><label>المحافظة / المدينة</label>
+        <select id="f_city">${cityOptions}<option value="__other" ${entry && !CITY_ORDER.includes(entry.city)?'selected':''}>أخرى...</option></select>
+      </div>
+      <div><label>الاسم</label><input id="f_name" value="${entry?escapeHtml(entry.name):''}" placeholder="مثال: عيادة د. فلان"></div>
+      <div><label>الاختصاص / ملاحظة</label><input id="f_specialty" value="${entry?escapeHtml(entry.specialty):''}" placeholder="مثال: اخصائي جراحة كلى"></div>
+      <div><label>رقم الهاتف</label><input id="f_phone" value="${entry?escapeHtml(entry.phone):''}" placeholder="079xxxxxxx"></div>
+      <div><label>المنطقة الفرعية</label><input id="f_subregion" value="${entry?escapeHtml(entry.subregion):''}" placeholder="مثال: قضية اربد"></div>
+      <div style="grid-column:1/-1"><label>العنوان</label><input id="f_address" value="${entry?escapeHtml(entry.address):''}" placeholder="العنوان بالتفصيل"></div>
+    </div>
+    <div class="hint">إذا كانت المحافظة غير موجودة اختر "أخرى..." واكتب اسمها.</div>
+    <div id="otherCityWrap" style="margin-top:8px;${entry && !CITY_ORDER.includes(entry.city)?'':'display:none;'}">
+      <label>اسم المحافظة الأخرى</label><input id="f_city_other" value="${entry && !CITY_ORDER.includes(entry.city)?escapeHtml(entry.city):''}">
+    </div>
+    <div class="actions">
+      <button class="btn-primary" id="saveBtn">${entry?'حفظ التعديل':'إضافة'}</button>
+      <button class="btn-secondary" id="backBtn">↩ رجوع للعيادات</button>
+      <button class="btn-secondary" id="cancelBtn">إلغاء</button>
+    </div>
+  `;
+  const citySel = card.querySelector('#f_city');
+  citySel.onchange = ()=>{
+    card.querySelector('#otherCityWrap').style.display = citySel.value==='__other' ? '' : 'none';
+  };
+  card.querySelector('#saveBtn').onclick = submitForm;
+  card.querySelector('#cancelBtn').onclick = closeForm;
+  card.querySelector('#backBtn').onclick = ()=>{
+    closeForm();
+    document.getElementById('tabs').scrollIntoView({behavior:'smooth'});
+  };
+  card.scrollIntoView({behavior:'smooth'});
+}
+
+function closeForm(){
+  editingId = null;
+  currentImageData = null;
+  document.getElementById('formCard').style.display = 'none';
+}
+
+function submitForm(){
+  const dept = document.getElementById('f_dept').value;
+  let city = document.getElementById('f_city').value;
+  if(city==='__other'){
+    city = document.getElementById('f_city_other').value.trim();
+    if(!city){ alert('اكتب اسم المحافظة'); return; }
+  }
+  const name = document.getElementById('f_name').value.trim();
+  if(!name){ alert('اكتب اسم العيادة'); return; }
+  const specialty = document.getElementById('f_specialty').value.trim();
+  const phone = document.getElementById('f_phone').value.trim();
+  const subregion = document.getElementById('f_subregion').value.trim();
+  const address = document.getElementById('f_address').value.trim();
+
+  const image = currentImageData || null;
+
+  if(editingId){
+    const e = state.entries.find(x=>x.id===editingId);
+    Object.assign(e, {dept, city, name, specialty, phone, subregion, address, image, ts: Date.now()});
+  } else {
+    const maxId = state.entries.reduce((m,e)=>Math.max(m,e.id),0);
+    state.entries.push({id:maxId+1, dept, city, name, specialty, phone, subregion, address, image, ts: Date.now()});
+  }
+  activeDept = dept;
+  currentImageData = null;
+  saveData();
+  closeForm();
+  renderAll();
+  document.getElementById('tabs').scrollIntoView({behavior:'smooth'});
+}
+
+document.getElementById('openAddBtn').onclick = ()=>{
+  if(state.depts.length===0){
+    const name = prompt('لا يوجد أقسام بعد. اكتب اسم القسم الأول:');
+    if(!name || !name.trim()) return;
+    state.depts.push(name.trim());
+    activeDept = name.trim();
+    saveData();
+  }
+  openForm(null);
+};
+
+document.getElementById('searchBox').oninput = (e)=>{
+  searchTerm = e.target.value.trim();
+  renderList();
+};
+
+let imgPanelOpen = false;
+
+function updateHeaderImgBtn(){
+  const count = Array.isArray(state.headerImages) ? state.headerImages.length : 0;
+  document.getElementById('headerImgBtn').textContent = count
+    ? `🖼 إضافة صور للـPDF (${count})`
+    : '🖼 إضافة صور للـPDF';
+  const manageBtn = document.getElementById('headerImgClearBtn');
+  manageBtn.style.display = count ? '' : 'none';
+  manageBtn.textContent = imgPanelOpen ? '🗑 إغلاق إدارة الصور' : `🗑 إدارة الصور (${count})`;
+  if(!count) imgPanelOpen = false;
+  renderHeaderImgPanel();
+}
+
+function renderHeaderImgPanel(){
+  const panel = document.getElementById('headerImgPanel');
+  const imgs = Array.isArray(state.headerImages) ? state.headerImages : [];
+  if(!imgPanelOpen || imgs.length===0){
+    panel.style.display = 'none';
+    panel.innerHTML = '';
+    return;
+  }
+  panel.style.display = 'block';
+  panel.innerHTML = '<div class="img-panel-hint">اضغط ✕ على أي صورة لحذفها فقط، بدون التأثير على باقي الصور:</div><div class="img-grid" id="imgGrid"></div>';
+  const grid = panel.querySelector('#imgGrid');
+  imgs.forEach((src, idx)=>{
+    const box = document.createElement('div');
+    box.className = 'img-thumb';
+    box.innerHTML = `<img src="${src}" alt="صورة ${idx+1}"><button class="del-x" title="حذف هذه الصورة">✕</button>`;
+    box.querySelector('.del-x').onclick = ()=>{
+      if(confirm('حذف هذه الصورة فقط من صور غلاف الـPDF؟')){
+        state.headerImages.splice(idx, 1);
+        state.headerImage = null;
+        saveData();
+        updateHeaderImgBtn();
+      }
+    };
+    grid.appendChild(box);
+  });
+}
+
+const headerImgInput = document.getElementById('headerImgInput');
+document.getElementById('headerImgBtn').onclick = ()=>{
+  headerImgInput.value = '';
+  headerImgInput.click();
+};
+document.getElementById('headerImgClearBtn').onclick = ()=>{
+  imgPanelOpen = !imgPanelOpen;
+  updateHeaderImgBtn();
+};
+headerImgInput.onchange = async (ev)=>{
+  const files = Array.from(ev.target.files || []);
+  if(!files.length) return;
+  try{
+    const newImages = await Promise.all(files.map(file=>new Promise((resolve,reject)=>{
+      readImageFile(file, resolve);
+    })));
+    if(!Array.isArray(state.headerImages)) state.headerImages = [];
+    state.headerImages.push(...newImages);
+    state.headerImage = null;
+    saveData();
+    updateHeaderImgBtn();
+    alert(`تم حفظ ${newImages.length} صورة. ستظهر كل صورة في صفحة مستقلة في بداية ملف الـPDF، ثم تبدأ صفحات العيادات.`);
+  }catch(err){
+    console.error(err);
+    alert('تعذر حفظ إحدى الصور.');
+  }finally{
+    headerImgInput.value = '';
+  }
+};
+updateHeaderImgBtn();
+
+const PDF_LOGO_B64 = "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CBigBcbl+lNXJByMUikow3dDTmBLAr070XCwlLmjFIOaYCxj52J6dqa2Wc+1OY/JgdaTsPWkAdsUUEgDJpNwqgFopAQelLSAXFFIWA60UagmieiiisywooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigDB8W/8u3/AAL+lYa9q6vVtP8At/lfvfL2Z/hznOP8KoDw/wD9PX/jn/166qdWKgkzlqU5OWhi96cKs6lZ/Yp1j8zflc9MVWFa3T1Rg1Z2Yop4p9lD9ouUh3bd3etUaGP+fn/xyspSS0YRhKWyK2g/8hFf9xq6Os2w0wWtwJvO34BGNuK0awm03dHZRi4xsxaKKKg1GyNtQt6VD9oP90fnUlx/qWqpVJEvQn+0H+6PzoE7f3R+dQU4U7E3ZbQ7kB9adTIf9Uv0pwqDQWiiigApKbM/lxM+M7Rmsxp/MuBLjAGOM1SjcmUrGtRUVtL5qbtuOcdalqRp3CiiigYUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUVHPKkMTSvnaoycVVGqWv/TT/AL5pqLYm0ty9WXr33If941N/alr/ANNP++apandxXKxiPdlSScjFVCLUjOck1oUqBRQK3ZzMcv3l+tdKK5ocEH3rZ/tO2/2/++ayqJvY3pNLcu0VSGpW3+3/AN81JBeQzSCNN2T6is7M15l3LNFFFIoKKKKACiiigAooooAKKKKACiiigAooooAKKKKAEb7ppg6VJSUEsZketOFRomDTmOD1poQP2pKM5oqgCiiigAooooAKKKKACiiigAooooAKKKKACiiigBrrux9amQYXFMFSD7tSykG0VEw21LTe5oTsJkVFOK5bOKayciruIRhkYpyJTkXFO70rgMZQvSm0+TvTQvAOKAI35IoqdF4PaijmFyj6KKKg0CiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigDnfEv/AB/J/wBc/wCprLFdRf6bDeSiSR5FIGPlxUH9hW3/AD2m/Mf4V0RqRSSOWdKTk2jL0X/kJw/U/wAq6gVQtdJgt51mSSUsvQHGP5VoVnUkpPQ1pQcVZhRRSVmai0VSMkmT87dfWk8yT++351XKK5bn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";
+// Within a governorate: clinics added/edited in the app (ts = Date.now()) come first,
+// newest on top; the original list keeps its original order after them.
+function pdfNewFirst(a,b){
+  const NEW = 1e12;
+  const an = (a.ts||0) >= NEW, bn = (b.ts||0) >= NEW;
+  if(an && bn) return (b.ts||0)-(a.ts||0);
+  if(an) return -1;
+  if(bn) return 1;
+  return (a.ts||0)-(b.ts||0);
+}
+
+function buildDeptContentHtml(){
+  const EXCLUDED_DEPTS = ['مستشفيات','المستشفيات'];
+  let html = '';
+  state.depts.forEach(dep=>{
+    if(EXCLUDED_DEPTS.includes(dep.trim())) return;
+    const deptEntries = state.entries.filter(e=>e.dept===dep);
+    if(deptEntries.length===0) return;
+    html += '<div class="pdf-dept-banner">'+escapeHtml(dep)+'</div>';
+    html += '<table class="pdf-table"><colgroup><col class="c-img"><col class="c-name"><col class="c-addr"><col class="c-phone"></colgroup>';
+    html += '<thead><tr><th>الصورة</th><th>اسم المركز</th><th>العنوان</th><th>هاتف العيادة</th></tr></thead><tbody>';
+    deptEntries.slice().sort((a,b)=> cityIndex(a.city)-cityIndex(b.city) || (a.city||'').localeCompare(b.city||'') || pdfNewFirst(a,b)).forEach(e=>{
+      const base = (e.subregion? e.subregion+' - ':'') + (e.address||'');
+      const addr = (e.city && e.city!=='عمان') ? (e.city+' – '+base) : base;
+      html += '<tr>';
+      html += '<td class="img-cell">'+(e.image?('<img src="'+e.image+'">'):'')+'</td>';
+      html += '<td class="name-cell"><b>'+escapeHtml(e.name)+'</b>'+(e.specialty?'<span>'+escapeHtml(e.specialty)+'</span>':'')+'</td>';
+      html += '<td>'+escapeHtml(addr)+'</td>';
+      const phoneParts = String(e.phone||'').split(/[\/\u060C,\n]+/).map(s=>s.trim()).filter(Boolean);
+      html += '<td class="phone-cell" style="text-align:center;">'+phoneParts.map(p=>'<div class="phone-line" style="display:block;text-align:center;"><span class="phone-num">'+escapeHtml(p)+'</span></div>').join('')+'</td>';
+      html += '</tr>';
+    });
+    html += '</tbody></table>';
+  });
+  return html;
+}
+
+function getHeaderImages(){
+  if(Array.isArray(state.headerImages)) return state.headerImages.filter(Boolean);
+  return state.headerImage ? [state.headerImage] : [];
+}
+
+function buildPdfCoverPagesHtml(){
+  return getHeaderImages().map((src, i)=>
+    '<div class="pdf-cover-page"><img src="'+src+'" alt="صورة PDF '+(i+1)+'"></div>'
+  ).join('');
+}
+
+function printFallback(){
+  const printArea = document.getElementById('printArea');
+  const logoSrc = 'data:image/jpeg;base64,'+PDF_LOGO_B64;
+  const logoRow = '<tr class="logo-row"><td colspan="4"><div class="pdf-logo-header"><img src="'+logoSrc+'"></div></td></tr>';
+  printArea.innerHTML =
+    buildPdfCoverPagesHtml() +
+    '<div class="pdf-title-banner">المراكز الطبية المعتمدة</div>' +
+    '<table class="pdf-table"><colgroup><col class="c-img"><col class="c-name"><col class="c-addr"><col class="c-phone"></colgroup>' +
+    '<thead>'+logoRow+'</thead>' +
+    '<tbody>'+buildDeptContentHtml()+'</tbody></table>';
+  window.print();
+}
+
+document.getElementById('pdfBtn').onclick = async ()=>{
+  const btn = document.getElementById('pdfBtn');
+  const oldLabel = btn.textContent;
+
+  // If the PDF libraries failed to load (e.g. no internet on first run),
+  // fall back to the browser print dialog.
+  if(typeof html2canvas === 'undefined' || typeof window.jspdf === 'undefined'){
+    printFallback();
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = 'جارِ التجهيز...';
+  try{
+    const { jsPDF } = window.jspdf;
+    const coverImages = getHeaderImages();
+    const logoSrc = 'data:image/jpeg;base64,'+PDF_LOGO_B64;
+    const logoHtml = '<div class="pdf-logo-header"><img src="'+logoSrc+'"></div>';
+
+    const PAGE_W = 794, PAGE_H = 1123, MARGIN = 34; // A4 @ 96dpi, ~0.9cm margin
+    const CONTENT_W = PAGE_W - MARGIN*2;
+    const CONTENT_H = PAGE_H - MARGIN*2;
+    const SCALE = 2;
+
+    const stage = document.createElement('div');
+    stage.style.cssText = 'position:fixed; left:-99999px; top:0; width:'+CONTENT_W+'px; background:#fff;';
+    document.body.appendChild(stage);
+
+    const header1El = document.createElement('div');
+    header1El.innerHTML = '<div class="pdf-title-banner">المراكز الطبية المعتمدة</div>' + logoHtml;
+    const headerRepeatEl = document.createElement('div');
+    headerRepeatEl.innerHTML = logoHtml;
+    const bodyEl = document.createElement('div');
+    bodyEl.innerHTML = buildDeptContentHtml();
+    stage.appendChild(header1El);
+    stage.appendChild(headerRepeatEl);
+    stage.appendChild(bodyEl);
+
+    // Measure atomic units so a page break never lands in the middle of a row.
+    const bodyTop = bodyEl.getBoundingClientRect().top;
+    const units = [];
+    const kids = Array.from(bodyEl.children);
+    for(let i=0;i<kids.length;i++){
+      const child = kids[i];
+      if(child.classList.contains('pdf-dept-banner')){
+        const table = kids[i+1];
+        const headerRow = table.querySelector('thead tr');
+        units.push({
+          top: child.getBoundingClientRect().top - bodyTop,
+          bottom: headerRow.getBoundingClientRect().bottom - bodyTop
+        });
+        table.querySelectorAll('tbody tr').forEach(tr=>{
+          const r = tr.getBoundingClientRect();
+          units.push({ top:r.top-bodyTop, bottom:r.bottom-bodyTop });
+        });
+      }
+    }
+
+    const header1H = header1El.getBoundingClientRect().height;
+    const headerRepeatH = headerRepeatEl.getBoundingClientRect().height;
+    const pageAvailH = CONTENT_H;
+
+    const [header1Canvas, headerRepeatCanvas, bodyCanvas] = await Promise.all([
+      html2canvas(header1El, {scale:SCALE, backgroundColor:'#ffffff'}),
+      html2canvas(headerRepeatEl, {scale:SCALE, backgroundColor:'#ffffff'}),
+      html2canvas(bodyEl, {scale:SCALE, backgroundColor:'#ffffff'})
+    ]);
+    stage.remove();
+
+    // Decide where each clinic page starts/ends, snapped to unit boundaries.
+    const pages = [];
+    if(units.length){
+      let cursor = 0;
+      let pageStartOffset = units[0].top;
+      let first = true;
+      while(cursor < units.length){
+        const headerH = first ? header1H : headerRepeatH;
+        const limit = pageStartOffset + (pageAvailH - headerH);
+        let lastFit = cursor;
+        for(let j=cursor;j<units.length;j++){
+          if(units[j].bottom <= limit + 0.5){ lastFit = j; } else break;
+        }
+        if(lastFit < cursor) lastFit = cursor;
+        pages.push({ top: pageStartOffset, bottom: units[lastFit].bottom, first });
+        cursor = lastFit + 1;
+        if(cursor < units.length) pageStartOffset = units[cursor].top;
+        first = false;
+      }
+    } else {
+      pages.push({top:0, bottom:0, first:true});
+    }
+
+    const pdf = new jsPDF({ unit:'px', format:[PAGE_W, PAGE_H] });
+
+    // IMPORTANT: each selected image is a full, independent first page.
+    // Clinic pages start only after all cover images have been added.
+    for(let i=0;i<coverImages.length;i++){
+      if(i>0) pdf.addPage([PAGE_W, PAGE_H]);
+      const img = new Image();
+      img.src = coverImages[i];
+      await new Promise((resolve,reject)=>{
+        if(img.complete && img.naturalWidth) return resolve();
+        img.onload = resolve;
+        img.onerror = reject;
+      });
+      const iw = img.naturalWidth || img.width;
+      const ih = img.naturalHeight || img.height;
+      const scale = Math.min(CONTENT_W/iw, CONTENT_H/ih);
+      const drawW = iw * scale;
+      const drawH = ih * scale;
+      const x = MARGIN + (CONTENT_W - drawW)/2;
+      const y = MARGIN + (CONTENT_H - drawH)/2;
+      pdf.addImage(coverImages[i], 'JPEG', x, y, drawW, drawH);
+    }
+
+    pages.forEach((p, i)=>{
+      const headerCanvas = p.first ? header1Canvas : headerRepeatCanvas;
+      const headerHcss = p.first ? header1H : headerRepeatH;
+      const sliceTopPx = Math.round(p.top * SCALE);
+      const sliceHeightPx = Math.max(0, Math.round((p.bottom - p.top) * SCALE));
+
+      const pageCanvas = document.createElement('canvas');
+      pageCanvas.width = CONTENT_W * SCALE;
+      pageCanvas.height = headerCanvas.height + sliceHeightPx;
+      const ctx = pageCanvas.getContext('2d');
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0,0,pageCanvas.width,pageCanvas.height);
+      ctx.drawImage(headerCanvas, 0, 0);
+      if(sliceHeightPx > 0){
+        ctx.drawImage(bodyCanvas, 0, sliceTopPx, bodyCanvas.width, sliceHeightPx, 0, headerCanvas.height, bodyCanvas.width, sliceHeightPx);
+      }
+
+      const imgData = pageCanvas.toDataURL('image/jpeg', 0.92);
+      const drawHeightCss = headerHcss + (p.bottom - p.top);
+      if(coverImages.length > 0 || i > 0) pdf.addPage([PAGE_W, PAGE_H]);
+      pdf.addImage(imgData, 'JPEG', MARGIN, MARGIN, CONTENT_W, drawHeightCss);
+    });
+
+    pdf.save('عيادات_شبكة_وقايتي.pdf');
+  }catch(err){
+    console.error(err);
+    alert('صار في خطأ أثناء تجهيز ملف الـPDF. رح نجرب الطباعة العادية كبديل.');
+    printFallback();
+  }finally{
+    btn.disabled = false;
+    btn.textContent = oldLabel;
+  }
+};
+
+document.getElementById('resetBtn').onclick = ()=>{
+  if(confirm('هذا سيمسح كل العيادات المضافة ويرجع للقائمة الأصلية فقط. متأكد؟')){
+    localStorage.removeItem(STORAGE_KEY);
+    state = loadData();
+    activeDept = state.depts[0] || null;
+    renderAll();
+  }
+};
+
+function renderAll(){
+  renderCount();
+  renderTabs();
+  renderList();
+}
+renderAll();
+</script>
+</body>
+</html>
